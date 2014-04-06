@@ -33,6 +33,7 @@ urlpatterns = patterns('',
     url(r'^index/admin/$', views.admin, name='admin'),
     #workplaces
     url(r'^workplace/admin/(?P<workplace_id>\d+)', views.workpalceAdmin, name='workplaceAdmin'),
+    url(r'^workplace/admin/create', views.workpalceAdminCreate, name='workplaceAdminCreate'),
     url(r'^workplace/change/admin/(?P<workplace_id>\d+)', views.workplaceChangeShiftAdmin, name='workplaceChangeShiftAdmin'),
     url(r'^workplace/users/admin/(?P<workplace_id>\d+)', views.workplaceUsersAdmin, name='workplaceUsersAdmin'),
     url(r'^workplace/rates/admin/(?P<workplace_id>\d+)', views.workplaceRatesAdmin, name='workplaceRatesAdmin'),

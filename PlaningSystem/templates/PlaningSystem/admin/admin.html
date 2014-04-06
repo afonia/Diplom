@@ -4,6 +4,9 @@
     <title>Админ</title>
 </head>
 <body>
+{% include "PlaningSystem/head.html" %}
+
+<h2>{{ error }}</h2>
 <form action="/PlaningSystem/" method="get" name="userWishSave" id="UserId">
 Не активные пользователи:
 <br>
@@ -20,6 +23,13 @@
         {% empty %}
         нет рабочих мест<br>
     {% endfor %}
+создать рабочее место
+<li>
+<form action="{% url 'workplaceAdminCreate' %}" method="get">
+    <input type="text" name="name_wp">
+    <input type="submit" value="создать">
+</form>
+</li>
 <br>
 Все ставки:<br>
     {% for rate in all_rates %}

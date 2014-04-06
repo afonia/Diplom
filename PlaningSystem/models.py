@@ -15,9 +15,9 @@ from django.utils.timezone import override
 
 class QUANTUM(object):
     QUANTUM_IS_SECOND = 1
-    QUANTUM_IS_MINUTE = 1/60
-    QUANTUM_IS_HOUR = 1/3600
-    QUANTUM_IS_DAY = 1/86400
+    QUANTUM_IS_MINUTE = 1 / 60
+    QUANTUM_IS_HOUR = 1 / 3600
+    QUANTUM_IS_DAY = 1 / 86400
     DEF_QUANTUM = QUANTUM_IS_HOUR
     DAY = 86400 * DEF_QUANTUM
     HOUR = 3600 * DEF_QUANTUM
@@ -35,28 +35,40 @@ class ShiftDuration(object):
         shifts_list = list(shifts)
         DurShift = []
         tz = None
+        delta_err = 0
         if shifts_list.__len__() > 0:
             tz = shifts_list[0].since.tzinfo
-            delta = abs((shifts_list[0].since - startDate.replace(tzinfo=tz)).total_seconds())
-            # print(startDate)
-            if delta > 1:
-                DurShift.append([ShiftDuration(delta*QUANTUM.SECOND, False)])
+            delta = (shifts_list[0].since - startDate.replace(tzinfo=tz)).total_seconds()
+            # print(startDate)round(5.49,0)
+            # num = round((delta + delta_err)/QUANTUM.SECOND,0)
+            # delta_err = (delta + delta_err)%QUANTUM.SECOND
+            if delta + delta_err >= 1/QUANTUM.SECOND:
+                num = int((delta + delta_err)/QUANTUM.SECOND)
+                delta_err = (delta + delta_err)%QUANTUM.SECOND
+                DurShift.append([ShiftDuration(num * QUANTUM.SECOND, False)])
+            else:
+                delta_err = delta
         for shift in shifts_list:
             # print(shift.since, shift.to)
             tz = shift.since.tzinfo
             index = shifts_list.index(shift)
-            delta = abs((shift.to - shift.since).total_seconds())
-            DurShift.append([ShiftDuration(delta*QUANTUM.SECOND, True), shift])
-            if index != shifts_list.__len__()-1:
-                delta = abs((shifts_list[index+1].since - shift.to).total_seconds())
-                if delta > 1:
-                    DurShift.append([ShiftDuration(delta*QUANTUM.SECOND, False)])
+            delta = (shift.to - shift.since).total_seconds()
+            DurShift.append([ShiftDuration(delta * QUANTUM.SECOND, True), shift])
+            if index != shifts_list.__len__() - 1:
+                delta = abs((shifts_list[index + 1].since - shift.to).total_seconds())
+                if delta + delta_err >= 1/QUANTUM.SECOND:
+                    num = int((delta + delta_err)/QUANTUM.SECOND)
+                    delta_err = (delta + delta_err)%QUANTUM.SECOND
+                    DurShift.append([ShiftDuration(delta * QUANTUM.SECOND, False)])
+                else:
+                    delta_err = delta
             else:
-                delta = abs((endDate.replace(tzinfo=tz) - shift.to).total_seconds())
+                delta = (endDate.replace(tzinfo=tz) - shift.to).total_seconds()
                 # print(endDate)
-                # print(delta)
-                if delta > 1:
-                    DurShift.append([ShiftDuration(delta*QUANTUM.SECOND, False)])
+                print(delta)
+                num = delta + delta_err
+                if num >= 1/QUANTUM.SECOND:
+                    DurShift.append([ShiftDuration(num * QUANTUM.SECOND, False)])
         return DurShift
 
 
@@ -78,23 +90,23 @@ class Rate(models.Model):
         # allshift = list(allshift)
         for shift in timeCosts:
             for workSh in allCosts:
-                if exeptCost!=None and workSh.id == exeptCost.id:
+                if exeptCost != None and workSh.id == exeptCost.id:
                     continue
-                if workSh.since <= shift.since <= workSh.to:
-                   return False
-                if workSh.since <= shift.to <= workSh.to:
-                   return False
-                if shift.since <= workSh.since <= shift.to:
-                   return False
-                if shift.since <= workSh.to <= shift.to:
-                   return False
+                if workSh.since < shift.since < workSh.to:
+                    return False
+                if workSh.since < shift.to < workSh.to:
+                    return False
+                if shift.since < workSh.since < shift.to:
+                    return False
+                if shift.since < workSh.to < shift.to:
+                    return False
 
         return True
 
     def pasteTCostAfter(self, tcosts, after):
         # shifts = self.getShiftsForPeriod(after,after)
         new_tcosts = []
-        if tcosts.__len__()>0:
+        if tcosts.__len__() > 0:
             delta = after - tcosts[0].since
             for tc in tcosts:
                 ws = TimeCost(since=tc.since + delta, to=tc.to + delta, cost=tc.cost, rate=self)
@@ -108,7 +120,6 @@ class Rate(models.Model):
 
     def __unicode__(self):
         return self.name
-
 
 
 class TimeCost(models.Model):
@@ -127,7 +138,6 @@ class TimeCost(models.Model):
     #     return self.since + "-" + self.to
 
 
-
 class WishEnum(models.Model):
     wish = models.CharField(max_length=300)
     image = models.ImageField(upload_to='media/wish', blank=True, max_length=1000, null=True, default='')
@@ -136,9 +146,10 @@ class WishEnum(models.Model):
     def __unicode__(self):
         return self.wish
 
+
 class Workplace(models.Model):
     name = models.CharField(max_length=300)
-    rates = models.ManyToManyField(Rate,null=True)
+    rates = models.ManyToManyField(Rate, blank=True, null=True)
     #pub_date = models.DateTimeField('date published')
 
     @property
@@ -151,7 +162,7 @@ class Workplace(models.Model):
 
 class Schedule(models.Model):
     name = models.CharField(max_length=300)
-    workplace = models.OneToOneField(Workplace)
+    workplace = models.OneToOneField(Workplace, blank=True, null=True)
     #pub_date = models.DateTimeField('date published')
 
     @property
@@ -173,23 +184,23 @@ class Schedule(models.Model):
         # allshift = list(allshift)
         for shift in shifts:
             for workSh in allshift:
-                if exeptShift!=None and workSh.id == exeptShift.id:
+                if exeptShift != None and workSh.id == exeptShift.id:
                     continue
-                if workSh.since <= shift.since <= workSh.to:
-                   return False
-                if workSh.since <= shift.to <= workSh.to:
-                   return False
-                if shift.since <= workSh.since <= shift.to:
-                   return False
-                if shift.since <= workSh.to <= shift.to:
-                   return False
+                if workSh.since < shift.since < workSh.to:
+                    return False
+                if workSh.since < shift.to < workSh.to:
+                    return False
+                if shift.since < workSh.since < shift.to:
+                    return False
+                if shift.since < workSh.to < shift.to:
+                    return False
 
         return True
 
     def pasteShiftAfter(self, shifts, after):
         # shifts = self.getShiftsForPeriod(after,after)
         new_shifts = []
-        if shifts.__len__()>0:
+        if shifts.__len__() > 0:
             delta = after - shifts[0].since
             for shift in shifts:
                 ws = WorkingShift(since=shift.since + delta, to=shift.to + delta, scheldue=self)
@@ -201,41 +212,42 @@ class Schedule(models.Model):
             else:
                 return False
 
-    # def getShiftsForPeriodWithDurations(self, startDate, endDate):
-    #     shifts_list = list(self.getShiftsForPeriod(startDate, endDate))
-    #     ret = []
-    #     if shifts_list.__len__() > 0:
-    #         delta = abs((shifts_list[0].since.replace(tzinfo=None) - startDate).days)
-    #         if delta > 0:
-    #             ret.append(ShiftDuration(delta*MY_CONST.QUANT_FOR_SCHELDUE, False))
-    #     for shifts in shifts_list:
-    #         print(shifts.since, shifts.to)
-    #         index = shifts_list.index(shifts)
-    #         if index == shifts_list.__len__()-1:
-    #             delta = abs((shifts.to.replace(tzinfo=None) - endDate).days)
-    #             if delta>0:
-    #                ret.append(ShiftDuration(delta*MY_CONST.QUANT_FOR_SCHELDUE, False))
-    #             # print("last", delta)
-    #         else:
-    #             delta_min = abs((shifts_list[index+1].since - shifts.to).seconds/60)
-    #             print(delta_min)
-    #             if delta_min > MY_CONST.QUANT_OF_TIME:
-    #                 ret.append(ShiftDuration(delta_min/MY_CONST.MINUTES_IN_DAY*MY_CONST.QUANT_FOR_SCHELDUE, False))
+                # def getShiftsForPeriodWithDurations(self, startDate, endDate):
+                #     shifts_list = list(self.getShiftsForPeriod(startDate, endDate))
+                #     ret = []
+                #     if shifts_list.__len__() > 0:
+                #         delta = abs((shifts_list[0].since.replace(tzinfo=None) - startDate).days)
+                #         if delta > 0:
+                #             ret.append(ShiftDuration(delta*MY_CONST.QUANT_FOR_SCHELDUE, False))
+                #     for shifts in shifts_list:
+                #         print(shifts.since, shifts.to)
+                #         index = shifts_list.index(shifts)
+                #         if index == shifts_list.__len__()-1:
+                #             delta = abs((shifts.to.replace(tzinfo=None) - endDate).days)
+                #             if delta>0:
+                #                ret.append(ShiftDuration(delta*MY_CONST.QUANT_FOR_SCHELDUE, False))
+                #             # print("last", delta)
+                #         else:
+                #             delta_min = abs((shifts_list[index+1].since - shifts.to).seconds/60)
+                #             print(delta_min)
+                #             if delta_min > MY_CONST.QUANT_OF_TIME:
+                #                 ret.append(ShiftDuration(delta_min/MY_CONST.MINUTES_IN_DAY*MY_CONST.QUANT_FOR_SCHELDUE, False))
 
-        # return self.getShiftsForPeriod(startDate, endDate)
-        # shifts = shifts.order_by('since')
-        # print(shifts)
-        # if shifts.first().since.year != startDate.year or shifts.first().since.month != startDate.month or shifts.first().since.day != startDate.day:
-        #     print(shifts.first().since)
-        # return shifts
+                # return self.getShiftsForPeriod(startDate, endDate)
+                # shifts = shifts.order_by('since')
+                # print(shifts)
+                # if shifts.first().since.year != startDate.year or shifts.first().since.month != startDate.month or shifts.first().since.day != startDate.day:
+                #     print(shifts.first().since)
+                # return shifts
 
     def __unicode__(self):
         return self.name
 
+
 class WorkingShift(models.Model):
     since = models.DateTimeField()
     to = models.DateTimeField()
-    image = models.ImageField(upload_to='media/shift', blank=True, max_length=1000,null=True,default='')
+    image = models.ImageField(upload_to='media/shift', blank=True, max_length=1000, null=True, default='')
     scheldue = models.ForeignKey(Schedule)
 
     def deleteWithUserWishes(self):
@@ -246,12 +258,13 @@ class WorkingShift(models.Model):
     def __unicode__(self):
         return self.since.strftime('%Y.%m %d %H:%M') + self.since.strftime('-%d %H:%M')
 
+
 class User(AbstractUser):
-    workplaces = models.ManyToManyField(Workplace, null=True, default='')
+    workplaces = models.ManyToManyField(Workplace, blank=True, null=True, default='')
     avatar = models.ImageField(upload_to='media/avatar', blank=True, max_length=1000, null=True, default='')
-    third_name = models.CharField(max_length=300, null=True, default='')
-    work_phone = models.CharField(max_length=300, null=True, default='')
-    mobile_phone = models.CharField(max_length=300, null=True, default='')
+    third_name = models.CharField(max_length=300, blank=True, null=True, default='')
+    work_phone = models.CharField(max_length=300, blank=True, null=True, default='')
+    mobile_phone = models.CharField(max_length=300, blank=True, null=True, default='')
     # objects = UserManager()
     #pub_date = models.DateTimeField('date published')
 
@@ -260,8 +273,8 @@ class User(AbstractUser):
 
     @staticmethod
     def getValidUsers(except_users=None):
-        all_users = list(User.objects.filter(is_active=True,is_superuser=False))
-        if except_users!=None:
+        all_users = list(User.objects.filter(is_active=True, is_superuser=False))
+        if except_users != None:
             for ex_user in except_users:
                 for user in all_users:
                     if user.id == ex_user.id:
@@ -295,7 +308,7 @@ class User(AbstractUser):
             wishes.append([wp, wish])
         return wishes
 
-    def getUserWishesForWp(self,wp,startDate,endDate):
+    def getUserWishesForWp(self, wp, startDate, endDate):
         wish = []
         shifts = wp.getSchedule.getShiftsForPeriod(startDate, endDate)
         DurShift = ShiftDuration.addDuratins(shifts, startDate, endDate)
@@ -315,9 +328,9 @@ class User(AbstractUser):
         return "none"
 
     def getWishForShift(self, shift):
-        # wishes = UserWish.objects.filter(user=self, workingShift=shift).order_by('since')
-        # for wish in wishes:
-            # print(wishes[0].wish.wish)
+    # wishes = UserWish.objects.filter(user=self, workingShift=shift).order_by('since')
+    # for wish in wishes:
+    # print(wishes[0].wish.wish)
         return UserWish.objects.filter(user=self, workingShift=shift).order_by('since')
 
     def getUserWishesforPeriod(self, startDate, endDate):
@@ -331,10 +344,11 @@ class User(AbstractUser):
                 wishes.append([wp, user_wish])
         return wishes
 
+
 class UserWish(models.Model):
     since = models.DateTimeField()
     to = models.DateTimeField()
-    wish = models.ForeignKey(WishEnum, null=True, default='')
+    wish = models.ForeignKey(WishEnum, blank=True, null=True, default='')
     isApproved = models.BooleanField()
     # schedule = models.ForeignKey(Schedule)
     workingShift = models.ForeignKey(WorkingShift)
@@ -347,13 +361,13 @@ class UserWish(models.Model):
     def __unicode__(self):
         return User.objects.select_related()
 
-    # def __int__(self, since, to, wish, schedule, user):
-    #     self.since = since
-    #     self.to = to
-    #     self.wish = wish
-    #     self.isApproved = False
-    #     self.schedule = schedule
-    #     self.user = user
+        # def __int__(self, since, to, wish, schedule, user):
+        #     self.since = since
+        #     self.to = to
+        #     self.wish = wish
+        #     self.isApproved = False
+        #     self.schedule = schedule
+        #     self.user = user
 
 
 

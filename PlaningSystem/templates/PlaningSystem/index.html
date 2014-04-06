@@ -1,42 +1,17 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>index</title>
+    <title>Здраствуйте</title>
 </head>
+<div id="login-wrap">
+   Авторизуйтесь пожалуйста
+    <form method="post" action="{% url 'auth:login' %}?next={{ request.path|urlencode }}">
+        {% csrf_token %}
+        <input type="text" name="username" maxlength="30" id="id_username" class="ptserif"/>
+        <input type="password" name="password" id="id_password" class="ptserif"/>
+        <input type="submit" name="login" value="Войти" class="ptserif"/>
+    </form>
+    или можете
+    <a href="{% url 'register_user' %}">зарегистрироваться</a>
+</div>
 <body>
-{% include "PlaningSystem/head.html" %}
-All Users:<br>
-    {% for user in users %}
-        <li><a href="{% url 'user' user.id %}">{{ user.username }}</a></li>
-{#        <img src="{{ user.avatar.url }}">{{ user.avatar.url }}<br>#}
-        {% empty %}
-        No users<br>
-    {% endfor %}
-All Workplaces:<br>
-    {% for workplace in workplaces %}
-        <li><a href="{% url 'workplace' workplace.id %}"> {{ workplace.name }} </a></li>
-        {% empty %}
-        No workplaces<br>
-    {% endfor %}
-All Rates:<br>
-    {% for rate in rates %}
-        <li><a href="{% url 'rate' rate.id %}">
-            {{ rate.name }}
-        </a></li>
-        {% empty %}
-        No rates<br>
-    {% endfor %}
-<br>
-All Admins scheldue:<br>
-    {% for rate in scheldues %}
-        <li><a href="{% url 'scheldueAdmin' rate.id %}">
-            {{ rate.name }}
-        </a></li>
-        {% empty %}
-        No scheldues<br>
-    {% endfor %}
-<br>
-<br>
-<a href="{% url 'login' %}">login</a>
-</body>
-</html>

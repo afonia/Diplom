@@ -1,5 +1,6 @@
 import calendar
 import os
+from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from datetime import datetime
@@ -32,27 +33,41 @@ def admin(request):
             'all_rates': all_rates,
             'all_valid_users': all_valid_users
         }
+    if 'error' in request.session:
+        context['error'] = request.session['error']
+        del request.session['error']
     return render(request, 'PlaningSystem/admin/admin.html', context)
+
+def workpalceAdminCreate(request):
+    if 'name_wp' in request.GET:
+        name = request.GET['name_wp']
+        if name.__len__()<1:
+            request.session['error'] ='Вы не ввели имя'
+            return HttpResponseRedirect(reverse('admin'))
+        wp = Workplace(name=name)
+        sh = Schedule(name='scheldue_'+name, workplace=wp)
+        # wp.schedule = sh
+        # sh.workplace = wp
+        wp.save()
+        sh.save()
+        sh = Schedule(id=sh.id)
+        sh.name = 'scheldue_'+name
+        sh.workplace = wp
+        sh.save()
+        print(sh.workplace.id)
+
+        return HttpResponseRedirect(reverse('workplaceAdmin', args=[wp.id]))
+    else:
+        request.session['error'] = 'Что-то пошло не так'
+    return HttpResponseRedirect(reverse('admin'))
 
 def workpalceAdmin(request, workplace_id):
     users = User.getValidUsers()
     workplace = Workplace.objects.get(id=workplace_id)
     scheldue = workplace.schedule
     rates = workplace.rates.all()
-    today = datetime.date.today()
-    since = datetime.datetime(today.year, today.month, 1)
-    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-    if request.GET.get('since'):
-        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
-    elif request.session['since']:
-        since = datetime.datetime.strptime(request.session['since'], '%Y-%m-%d')
-    if request.GET.get('to'):
-        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
-    elif request.session['to']:
-        to = datetime.datetime.strptime(request.session['to'], '%Y-%m-%d')
-    request.session['since'] = since.strftime('%Y-%m-%d')
-    request.session['to'] = to.strftime('%Y-%m-%d')
-    to += datetime.timedelta(hours=23, minutes=59)
+    since = get_since(request, 'wp')
+    to = get_to(request, 'wp')
     days = GetDaysOfPeriod(since, to)
     ColomnNum = days.__len__() * QUANTUM.DAY + 1
     months = list_month_dur(since, to)
@@ -80,6 +95,7 @@ def workpalceAdmin(request, workplace_id):
     }
 
     return render(request, 'PlaningSystem/admin/workplace_admin.html', context)
+
 def workplaceRatesAdmin(request, workplace_id):
     workplace = Workplace.objects.get(id=workplace_id)
     rates = Rate.objects.all()
@@ -277,16 +293,8 @@ def scheldueCopyShiftsAdmin(request, scheldue_id):
 def scheldueAdmin(request, scheldue_id):
     checkAdmin(request)
     scheldue = Schedule.objects.get(id=scheldue_id)
-    today = datetime.date.today()
-    if request.GET.get('since'):
-        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
-    else:
-        since = datetime.datetime(today.year, today.month, 1)
-    if request.GET.get('to'):
-        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
-    else:
-        to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-    to += datetime.timedelta(hours=23, minutes=59)
+    since = get_since(request, 'sh')
+    to = get_to(request, 'sh')
     days = GetDaysOfPeriod(since, to)
     ColomnNum = days.__len__() * QUANTUM.DAY
     months = list_month_dur(since, to)
@@ -429,16 +437,8 @@ def rateCopyTCostAdmin(request, rate_id):
 def rateAdmin(request, rate_id):
     checkAdmin(request)
     rate = Rate.objects.get(id=rate_id)
-    today = datetime.date.today()
-    if request.GET.get('since'):
-        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
-    else:
-        since = datetime.datetime(today.year, today.month, 1)
-    if request.GET.get('to'):
-        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
-    else:
-        to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-    to += datetime.timedelta(hours=23, minutes=59)
+    since = get_since(request, 'rt')
+    to = get_to(request, 'rt')
     days = GetDaysOfPeriod(since, to)
     ColomnNum = days.__len__() * QUANTUM.DAY
     months = list_month_dur(since, to)
@@ -465,13 +465,14 @@ def rateAdmin(request, rate_id):
 
 #/////////////////////////////////////////////end admin
 def index(request):
-    context = {
-        'users': User.objects.all(),
-        'workplaces': Workplace.objects.all(),
-        'rates': Rate.objects.all(),
-        'scheldues': Schedule.objects.all()
-    }
-    return render(request, 'PlaningSystem/index.html', context)
+    if request.user.is_authenticated():
+        print(request.user.is_superuser)
+        if request.user.is_superuser:
+            print(reverse('admin'))
+            return HttpResponseRedirect(reverse('admin'))
+        else:
+            return HttpResponseRedirect(reverse('user', args=[user.id]))
+    return render(request, 'PlaningSystem/index.html')
 
 def register_user(request):
     error = ''
@@ -755,6 +756,29 @@ def add_months(sourcedate, months):
     month = month % 12 + 1
     day = min(sourcedate.day, calendar.monthrange(year, month)[1])
     return datetime.date(year,month,day)
+
+def get_since(request,key):
+    today = datetime.date.today()
+    since = datetime.datetime(today.year, today.month, 1)
+    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    if 'since' in request.GET:
+        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
+    elif 'since_'+key in request.session:
+        since = datetime.datetime.strptime(request.session['since_'+key], '%Y-%m-%d')
+    request.session['since_'+key] = since.strftime('%Y-%m-%d')
+    return since
+
+def get_to(request, key):
+    today = datetime.date.today()
+    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
+    if 'to' in request.GET:
+        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
+    elif 'to_'+key in request.session:
+        to = datetime.datetime.strptime(request.session['to_'+key], '%Y-%m-%d')
+    to += datetime.timedelta(hours=23, minutes=59)
+    request.session['to_'+key] = to.strftime('%Y-%m-%d')
+    return to
+
 
 
 #############
