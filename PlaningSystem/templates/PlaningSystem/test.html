@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>test</title>
+</head>
+<body>
+Показать за период:
+<form action="" enctype="multipart/form-data" method="post">{% csrf_token %}
+  <input type="file"/>
+<input type="submit" VALUE="ok" >
+    </form>
+<tr><th><label for="id_title">Title:</label></th><td><ul class="errorlist"><li>Обязательное поле.</li></ul><input id="id_title" maxlength="1000" name="title" type="text" /></td></tr>
+<tr><th><label for="id_file">File:</label></th><td><ul class="errorlist"><li>Обязательное поле.</li></ul><input id="id_file" name="file" type="file" /></td></tr>
+<br>
+<form action="" method="post" enctype="multipart/form-data" >{% csrf_token %}
+{{ form.as_p }}
+<input type="submit" value="Submit" />
+</form>
+</body>
+</html>

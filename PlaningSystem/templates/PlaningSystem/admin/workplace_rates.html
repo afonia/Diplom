@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Users</title>
+</head>
+<body>
+ <a href="{% url 'workplaceAdmin' workplace.id %}">вернуться</a>
+<br>
+Все пользователи:<br>
+<form action="{% url 'workplaceRatesAdmin' workplace.id %}" method="get">
+    {% for rate,flag in rates_at_workplace %}
+        <input type="hidden" name="rate-{{ rate.id }}" value="off">
+        <input type="checkbox" name="rate-{{ rate.id }}" value="{{ rate.id }}"
+                {% if flag %}
+                checked
+                {% endif %} >
+        <a href="{% url 'rateAdmin' rate.id %}">{{ rate.name }}</a><br>
+    {% empty %}
+        нет ставок<br>
+    {% endfor %}
+<input type="submit" VALUE="Сохранить" >
+</form>
+</body>
+</html>

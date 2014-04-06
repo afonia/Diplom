@@ -1,0 +1,57 @@
+<form action="/PlaningSystem/user/save" method="get" name="userWishSave" id="UserId">
+<table BORDER WIDTH="100%" >
+   <caption>Рассписание</caption>
+    <col WIDTH="25%" span="4" >
+    <tr>
+        <th >Рабочее Место</th>
+       {% for day in days %}
+        <th>{{ day }}</th>
+        {% empty %}
+        Период не задан или задан не верно<br>
+    {% endfor %}
+   </tr>
+   {% for item in wishes %}
+       <tr>
+       {% for it in item %}
+           <td>
+           {% if forloop.first %}
+               <li><a href="{% url 'workplace' it.id %}">{{ it.name }}</a></li>
+           {% else %}
+               {% for wish in  wishesEnum %}
+                    <input type="radio" name="{{ forloop.parentloop.counter0 }}({{ forloop.parentloop.parentloop.counter0 }})" value="{{ wish.wish }}"> {{ wish.wish }}<Br>
+               {% endfor %}
+
+{#               <input type="radio" name="browser" value="ie"> Internet Explorer<Br>#}
+{#               <input type="radio" name="browser" value="opera"> Opera<Br>#}
+{#               <input type="radio" name="browser" value="firefox"> Firefox<Br>#}
+{#               {{ it.wish }}#}
+           {% endif %}
+           </td>
+           {% empty %}
+           <td> не выбранно </td>
+       {% endfor %}
+       </tr>
+       {% empty %}
+       <th>нет данных</th>
+   {% endfor %}
+</table>
+<input type="submit" VALUE="SAVE" >
+</form>
+
+
+<br>
+<form action="/PlaningSystem/sheldue/add" method="get">
+
+Since:  <input type="datetime-local" name="since"  value="2012-12-12T00:00" id="since"/><br>
+To:     <input type="datetime-local" name="to" value="2012-12-13T00:00" id="to"/><br>
+
+Wish:   <select id="wish" >
+            {% for wish in wishesEnum %}
+                <option name="wish" id="{{ wish.wish }}">{{ wish.wish }}</option>
+            {% empty %}
+                No enum of wishes
+            {% endfor %}
+        </select><br>
+<input type="submit" VALUE="ADD" >
+</form>
+<br>

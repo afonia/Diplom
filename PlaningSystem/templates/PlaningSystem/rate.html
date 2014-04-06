@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Ставка</title>
+</head>
+<body>
+Name:{{ rate.name }}
+<table border="1">
+<caption>Ставка</caption>
+    <tr>
+        <th>Период</th>
+       {% for day in times %}
+        <th>{{ day }}</th>
+        {% empty %}
+        <th>Период не задан или задан не верно</th>
+    {% endfor %}
+   </tr>
+<th>стоимость</th>
+   {% for item in costs %}
+       <td>
+       {{ item }}
+       </td>
+       {% empty %}
+       <th>нет данных</th>
+   {% endfor %}
+</table>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Регистрация</title>
+</head>
+<body>
+{{ error }}<br>
+
+<form  action="" method="post" enctype="multipart/form-data" >{% csrf_token %}
+    Логин:
+<input type="text" name="username"><br>
+    пароль:
+<input type="password" name="password1"><br>
+    подтвердите:
+<input type="password" name="password2"><br>
+    мыло:
+<input type="email" name="email"><br>
+    имя:
+<input type="text" name="first_name"><br>
+    фамилия:
+<input type="text" name="second_name"><br>
+    отчество:
+<input type="text" name="third_name"><br>
+    мобильный телефон:
+<input type="text" name="mobile_phone"><br>
+    рабочий телефон:
+<input type="text" name="work_phone"><br>
+    аватар:
+<br>
+<input id="id_file" name="avatar" type="file" />
+
+<input type="submit" value="Зарегистрироваться">
+</form>
+</body>
+</html>
