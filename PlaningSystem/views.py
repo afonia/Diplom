@@ -21,6 +21,23 @@ def checkAdmin(request):
         return render(request, 'PlaningSystem/admin/errors.html', context)
     return None
 
+
+def activeUserAdmin(request):
+    get_params = request.GET
+    for name in get_params:
+        value = get_params[name]
+        if 'not_active_user' in name:
+            value = int(value)
+            user = User.objects.get(id=value)
+            user.is_active = True
+            user.save()
+        elif 'disactive_user' in name:
+            value = int(value)
+            user = User.objects.get(id=value)
+            user.is_active = False
+            user.save()
+    return HttpResponseRedirect(reverse('admin'))
+
 def admin(request):
     checkAdmin(request)
     not_active_users = User.objects.filter(is_active=False)
@@ -536,6 +553,7 @@ def register_user(request):
         new_user.avatar = avatar
     if new_user is not None:
         new_user.save()
+        return HttpResponseRedirect(reverse('user', args=[new_user.id]))
     context = {
     }
     return render(request, 'PlaningSystem/registration.html', context)

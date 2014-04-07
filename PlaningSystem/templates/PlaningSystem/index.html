@@ -5,7 +5,7 @@
 </head>
 <div id="login-wrap">
    Авторизуйтесь пожалуйста
-    <form method="post" action="{% url 'auth:login' %}?next={{ request.path|urlencode }}">
+    <form method="post" action="{% url 'auth:login' %}?next={% url 'index' %}">
         {% csrf_token %}
         <input type="text" name="username" maxlength="30" id="id_username" class="ptserif"/>
         <input type="password" name="password" id="id_password" class="ptserif"/>

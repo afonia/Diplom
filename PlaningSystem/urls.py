@@ -37,7 +37,7 @@ urlpatterns = patterns('',
     url(r'^workplace/change/admin/(?P<workplace_id>\d+)', views.workplaceChangeShiftAdmin, name='workplaceChangeShiftAdmin'),
     url(r'^workplace/users/admin/(?P<workplace_id>\d+)', views.workplaceUsersAdmin, name='workplaceUsersAdmin'),
     url(r'^workplace/rates/admin/(?P<workplace_id>\d+)', views.workplaceRatesAdmin, name='workplaceRatesAdmin'),
-    # url(r'^scheldue/copy/admin/(?P<scheldue_id>\d+)', views.scheldueCopyShiftsAdmin, name='scheldueCopyShiftsAdmin'),
+    url(r'^scheldue/copy/admin/(?P<scheldue_id>\d+)', views.scheldueCopyShiftsAdmin, name='scheldueCopyShiftsAdmin'),
     #scheldues
     url(r'^scheldue/admin/(?P<scheldue_id>\d+)', views.scheldueAdmin, name='scheldueAdmin'),
     url(r'^scheldue/change/admin/(?P<scheldue_id>\d+)', views.scheldueChangeShiftAdmin, name='scheldueChangeShiftAdmin'),
@@ -50,5 +50,8 @@ urlpatterns = patterns('',
     url(r'^rate/new/admin/(?P<rate_id>\d+)', views.rateNewTCostAdmin, name='rateNewShiftAdmin'),
     url(r'^rate/delete/admin/(?P<rate_id>\d+)', views.rateDeleteTCostAdmin, name='rateDeleteShiftAdmin'),
     url(r'^rate/copy/admin/(?P<rate_id>\d+)', views.rateCopyTCostAdmin, name='rateCopyShiftsAdmin'),
+    #users
+    url(r'^rate/activeUser/admin/', views.activeUserAdmin, name='activeUserAdmin'),
+
 
 )

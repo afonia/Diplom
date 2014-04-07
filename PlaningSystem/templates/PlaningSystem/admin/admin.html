@@ -1,51 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Админ</title>
+	<title>Админ</title>
 </head>
 <body>
 {% include "PlaningSystem/head.html" %}
 
 <h2>{{ error }}</h2>
-<form action="/PlaningSystem/" method="get" name="userWishSave" id="UserId">
-Не активные пользователи:
-<br>
-{% for user in  not_active_users %}
-<input type="checkbox" name="not_active_user" value="{{ user.id }}" >{{ user.username }}<br>
+Пользователи:<br>
+{% if not_active_users %}
+	<form action="{% url 'activeUserAdmin' %}" method="get" name="userWishSave" id="UserId">
+	Не активные пользователи:<br>
+	{% for user in  not_active_users %}
+		<input type="checkbox" name="not_active_user" value="{{ user.id }}" >{{ user.username }}<br>
+	{% endfor %}
+	<input type="submit" value="Активировать">
+	</form>
+	Активные:<br>
+{% endif %}
+{% for user in all_valid_users %}
+	<li><a href="{% url 'user' user.id %}">{{ user.username }}</a></li>
 {% empty %}
+	НЕТУ!?<br>
 {% endfor %}
-<input type="submit" value="Активировать">
-</form>
+
 <br>
 Все рабочие места:<br>
-    {% for workplace in all_workplaces %}
-        <li><a href="{% url 'workplaceAdmin' workplace.id %}"> {{ workplace.name }} </a></li>
-        {% empty %}
-        нет рабочих мест<br>
-    {% endfor %}
+	{% for workplace in all_workplaces %}
+		<li><a href="{% url 'workplaceAdmin' workplace.id %}"> {{ workplace.name }} </a></li>
+		{% empty %}
+		нет рабочих мест<br>
+	{% endfor %}
 создать рабочее место
 <li>
 <form action="{% url 'workplaceAdminCreate' %}" method="get">
-    <input type="text" name="name_wp">
-    <input type="submit" value="создать">
+	<input type="text" name="name_wp">
+	<input type="submit" value="создать">
 </form>
 </li>
 <br>
 Все ставки:<br>
-    {% for rate in all_rates %}
-        <li><a href="{% url 'rate' rate.id %}">
-            {{ rate.name }}
-        </a></li>
-        {% empty %}
-        No rates<br>
-    {% endfor %}
+	{% for rate in all_rates %}
+		<li><a href="{% url 'rateAdmin' rate.id %}">
+			{{ rate.name }}
+		</a></li>
+		{% empty %}
+		No rates<br>
+	{% endfor %}
 
-Все активные пользователи:
 <br>
-    {% for user in all_valid_users %}
-        <li><a href="{% url 'user' user.id %}">{{ user.username }}</a></li>
-        {% empty %}
-        No users<br>
-    {% endfor %}
+
 </body>
 </html>

@@ -4,6 +4,7 @@
     <title>{{ scheldue.name }}</title>
 </head>
 <body>
+<a href="{% url 'workplaceAdmin' scheldue.workplace.id %}">назад к {{ scheldue.workplace.name }}</a><br>
 Расписания:
  {% for scheldue in scheldues %}
         <li><a href="{% url 'scheldueAdmin' scheldue.id %}">
@@ -28,14 +29,14 @@
     </tr>
     <tr>
         {% for month,duration in months %}
-        <th colspan={{ duration }}>{{ month|date:'F, Y'}}</th>
+        <th colspan="{{ duration }}" >{{ month|date:'F, Y'}}</th>
         {% empty %}
         Период не задан или задан не верно<br>
         {% endfor %}
     </tr>
     <tr>
         {% for day in days %}
-        <th colspan={{ QUANT_FOR_SCHELDUE }}>{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
+        <th colspan="{{ QUANT_FOR_SCHELDUE }}" >{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
         {% empty %}
         Период не задан или задан не верно<br>
         {% endfor %}

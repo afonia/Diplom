@@ -4,7 +4,8 @@
     <title>{{ Rate.name }}</title>
 </head>
 <body>
-Ставки:
+{% include "PlaningSystem/head.html" %}
+Другие ставки :
  {% for rate in rates %}
         <li><a href="{% url 'rateAdmin' rate.id %}">
             {{ rate.name }}

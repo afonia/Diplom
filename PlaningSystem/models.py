@@ -23,6 +23,7 @@ class QUANTUM(object):
     HOUR = 3600 * DEF_QUANTUM
     MINUTE = 60 * DEF_QUANTUM
     SECOND = 1 * DEF_QUANTUM
+    IN_SECONDS = 1/DEF_QUANTUM
 
 
 class ShiftDuration(object):
@@ -35,39 +36,30 @@ class ShiftDuration(object):
         shifts_list = list(shifts)
         DurShift = []
         tz = None
-        delta_err = 0
+        # delta_err = 0
         if shifts_list.__len__() > 0:
             tz = shifts_list[0].since.tzinfo
             delta = (shifts_list[0].since - startDate.replace(tzinfo=tz)).total_seconds()
-            # print(startDate)round(5.49,0)
-            # num = round((delta + delta_err)/QUANTUM.SECOND,0)
-            # delta_err = (delta + delta_err)%QUANTUM.SECOND
-            if delta + delta_err >= 1/QUANTUM.SECOND:
-                num = int((delta + delta_err)/QUANTUM.SECOND)
-                delta_err = (delta + delta_err)%QUANTUM.SECOND
-                DurShift.append([ShiftDuration(num * QUANTUM.SECOND, False)])
-            else:
-                delta_err = delta
+            num = round(delta*QUANTUM.SECOND,0)
+            if num >= 1:
+                DurShift.append([ShiftDuration(num, False)])
         for shift in shifts_list:
             # print(shift.since, shift.to)
             tz = shift.since.tzinfo
             index = shifts_list.index(shift)
             delta = (shift.to - shift.since).total_seconds()
-            DurShift.append([ShiftDuration(delta * QUANTUM.SECOND, True), shift])
+            num = round(delta*QUANTUM.SECOND,0)
+            DurShift.append([ShiftDuration(num, True), shift])
             if index != shifts_list.__len__() - 1:
                 delta = abs((shifts_list[index + 1].since - shift.to).total_seconds())
-                if delta + delta_err >= 1/QUANTUM.SECOND:
-                    num = int((delta + delta_err)/QUANTUM.SECOND)
-                    delta_err = (delta + delta_err)%QUANTUM.SECOND
-                    DurShift.append([ShiftDuration(delta * QUANTUM.SECOND, False)])
-                else:
-                    delta_err = delta
+                num = round(delta*QUANTUM.SECOND,0)
+                if num >= 1:
+                    DurShift.append([ShiftDuration(num, False)])
             else:
                 delta = (endDate.replace(tzinfo=tz) - shift.to).total_seconds()
                 # print(endDate)
-                print(delta)
-                num = delta + delta_err
-                if num >= 1/QUANTUM.SECOND:
+                num = round(delta*QUANTUM.SECOND,0)
+                if num >= 1:
                     DurShift.append([ShiftDuration(num * QUANTUM.SECOND, False)])
         return DurShift
 
