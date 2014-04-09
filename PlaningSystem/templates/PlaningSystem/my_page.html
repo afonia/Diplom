@@ -9,6 +9,7 @@ login: {{ user.username}}<br>
 Имя : {{ user.first_name }}<br>
 Фамилия: {{ user.last_name }}<br>
 Отчество: {{ user.third_name }}<br>
+<a href="{% url 'changeUser' request.user.id %}">РЕДАКТИРОВАТЬ</a>
 <br>
 Показать за период:
 <form action="" method="get">
@@ -62,9 +63,17 @@ login: {{ user.username}}<br>
             <td colspan="{{ durSh.0.duration }}">
             {% if durSh.0.hasShift %}
                 {% if durSh.2 %}
-                    {{ durSh.2.0.wish.wish }}
+                    {% for wish in  wishesEnum %}
+                        <input type="radio" name="wish_id-{{ durSh.2.0.id }}" value="{{ wish.id }}"
+                        {% if wish.wish == durSh.2.0.wish.wish %}
+                            checked="checked"
+                        {% endif %}
+                     > {{ wish.wish }}<Br>
+                    {% endfor %}
                 {% else %}
-                    Нет пожелания
+                    {% for wish in  wishesEnum %}
+                    <input type="radio" name="shift_id-{{ durSh.1.id }}" value="{{ wish.id }}"> {{ wish.wish }}<Br>
+                    {% endfor %}
                 {% endif %} 
             {% else %}
                 выбор не возможен

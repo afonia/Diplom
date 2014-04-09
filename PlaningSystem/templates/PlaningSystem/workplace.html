@@ -4,111 +4,116 @@
     <title>Workplace</title>
 </head>
 <body>
-name: {{ workplace.name }}<br>
+{% include "PlaningSystem/head.html" %}
+
+Название: {{ workplace.name }}<br>
 <br>
-
-
-
-
-
-<form action="/PlaningSystem/user/save" method="get" name="userWishSave" id="UserId">
-<table BORDER WIDTH="100%" >
-    <tr>
-        <th COLSPAN={{ ColomnNum }}>Рассписание</th>
-    </tr>
-    <tr>
-        <th ROWSPAN=3>Пользователи</th>
-
-        {% for month,duration in months %}
-        <th colspan={{ duration }}>{{ month|date:'F, Y'}}</th>
-        {% empty %}
-        Период не задан или задан не верно<br>
-        {% endfor %}
-    </tr>
-    <tr>
-        {% for day in days %}
-        <th colspan={{ QUANT_FOR_SCHELDUE }}>{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
-        {% empty %}
-        Период не задан или задан не верно<br>
-        {% endfor %}
-   </tr>
-   <tr>
-        {% for durSh in shiftsDur %}
-            <th colspan="{{ durSh.0.duration }}">
-            {% if durSh.0.hasShift %}
-                начало:{{ durSh.1.since|date:'H:i' }} <br>
-                конец:{{ durSh.1.to|date:'H:i' }} <br>
-            {% else %}
-                нет смен
-            {% endif %}
-            </th>
-        {% empty %}
-        <td> нет данных для отображения</td>
-        {% endfor %}
-   </tr>
-   <tr>
-      <th>
-          <li><a href="{% url 'user' viewing_user.id %}">{{ viewing_user.username }}</a></li>
-      </th>
-          {% for durSh in viewing_user_wishes %}
-            <td colspan="{{ durSh.0.duration }}">
-            {% if durSh.0.hasShift %}
-                {% if durSh.2 %}
-                    {% for wish in  wishesEnum %}
-                        <input type="radio" name="wish_id-{{ durSh.2.0.id }}" value="{{ wish.id }}"
-                        {% if wish.wish == durSh.2.0.wish.wish %}
-                            checked="checked"
-                        {% endif %}
-                     > {{ wish.wish }}<Br>
-                    {% endfor %}
-                {% else %}
-                    {% for wish in  wishesEnum %}
-                    <input type="radio" name="shift_id-{{ durSh.1.id }}" value="{{ wish.id }}"> {{ wish.wish }}<Br>
-                    {% endfor %}
-                {% endif %}
-            {% else %}
-                выбор не возможен
-            {% endif %}
-            </td>
-        {% empty %}
-        <td> нет данных для отображения</td>
-        {% endfor %}
-
-   </tr>
-   <tr>
-   {% for user in users %}
-        <th>
-          <li><a href="{% url 'user' user.id %}">{{ user.username }} </a></li>
-      </th>
-           {% for user_wishes in users_wishes %}
-
-               {% if forloop.counter0 == forloop.parentloop.counter0 %}
-
-
-          {% for durSh in user_wishes %}
-            <td colspan="{{ durSh.0.duration }}">
-            {% if durSh.0.hasShift %}
-                {{durSh.2.0.wish.wish}}
-
-            {% else %}
-                выбор не возможен
-            {% endif %}
-            </td>
-                   {% endfor %}
-              {% endif %}
-        {% empty %}
-        <td> нет данных для отображения</td>
-        {% endfor %}
-      {% empty %}
-               <td> {{forloop.counter0}} нет данных для отображения</td>
-      {% endfor %}
-   </tr>
-
-
-</table>
-<input type="submit" VALUE="SAVE" >
+Показать за период:
+<form action="" method="get">
+    С: <input type="date" name="since" value="{{ since|date:"Y-m-d" }}" id="since"/>
+    По: <input type="date" name="to" value="{{ to|date:"Y-m-d" }}" id="to"/>
+    <br>
+    <input type="submit" VALUE="Показать">
 </form>
 
+<form action="{% url 'userWishSave' %}" method="get" name="userWishSave" id="UserId">
+    <table BORDER WIDTH="100%">
+        <tr>
+            <th COLSPAN={{ ColomnNum }}>Рассписание</th>
+        </tr>
+        <tr>
+            <th ROWSPAN=3>Пользователи</th>
+
+            {% for month,duration in months %}
+                <th colspan={{ duration }}>{{ month|date:'F, Y' }}</th>
+            {% empty %}
+                Период не задан или задан не верно<br>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for day in days %}
+                <th colspan={{ QUANT_FOR_SCHELDUE }}>{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
+            {% empty %}
+                Период не задан или задан не верно<br>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for durSh in shiftsDur %}
+                <th colspan="{{ durSh.0.duration }}">
+                    {% if durSh.0.hasShift %}
+                        начало:{{ durSh.1.since|date:'H:i' }} <br>
+                        конец:{{ durSh.1.to|date:'H:i' }} <br>
+                    {% else %}
+                        нет смен
+                    {% endif %}
+                </th>
+            {% empty %}
+                <td> нет данных для отображения</td>
+            {% endfor %}
+        </tr>
+        <tr>
+            <th>
+                <li><a href="{% url 'user' viewing_user.id %}">{{ viewing_user.username }}</a></li>
+            </th>
+            {% for durSh in viewing_user_wishes %}
+                <td colspan="{{ durSh.0.duration }}">
+                    {% if durSh.0.hasShift %}
+                        {% if durSh.2 %}
+                            {% for wish in  wishesEnum %}
+                                <input type="radio" name="wish_id-{{ durSh.2.0.id }}" value="{{ wish.id }}"
+                                        {% if wish.wish == durSh.2.0.wish.wish %}
+                                       checked="checked"
+                                        {% endif %}
+                                        > {{ wish.wish }}<Br>
+                            {% endfor %}
+                        {% else %}
+                            {% for wish in  wishesEnum %}
+                                <input type="radio" name="shift_id-{{ durSh.1.id }}" value="{{ wish.id }}">
+                                {{ wish.wish }}<Br>
+                            {% endfor %}
+                        {% endif %}
+                    {% else %}
+                        выбор не возможен
+                    {% endif %}
+                </td>
+            {% empty %}
+                <td> нет данных для отображения</td>
+            {% endfor %}
+
+        </tr>
+        <tr>
+            {% for user in users %}
+                <th>
+                    <li><a href="{% url 'user' user.id %}">{{ user.username }} </a></li>
+                </th>
+                {% for user_wishes in users_wishes %}
+
+                    {% if forloop.counter0 == forloop.parentloop.counter0 %}
+
+
+                        {% for durSh in user_wishes %}
+                            <td colspan="{{ durSh.0.duration }}">
+                                {% if durSh.0.hasShift %}
+                                    {{ durSh.2.0.wish.wish }}
+
+                                {% else %}
+                                    выбор не возможен
+                                {% endif %}
+                            </td>
+                        {% endfor %}
+                    {% endif %}
+                {% empty %}
+                    <td> нет данных для отображения</td>
+                {% endfor %}
+            {% empty %}
+                <td> {{ forloop.counter0 }} нет данных для отображения</td>
+            {% endfor %}
+        </tr>
+
+
+    </table>
+    <input type="submit" VALUE="SAVE">
+</form>
 
 
 </body>

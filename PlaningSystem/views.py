@@ -1,7 +1,7 @@
 import calendar
 import os
 from django.core.urlresolvers import reverse
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import render
 from datetime import datetime
 from  django.views.generic.dates import *
@@ -62,17 +62,9 @@ def workpalceAdminCreate(request):
             request.session['error'] ='Вы не ввели имя'
             return HttpResponseRedirect(reverse('admin'))
         wp = Workplace(name=name)
-        sh = Schedule(name='scheldue_'+name, workplace=wp)
-        # wp.schedule = sh
-        # sh.workplace = wp
         wp.save()
+        sh = Schedule(name='scheldue_'+name, workplace=wp)
         sh.save()
-        sh = Schedule(id=sh.id)
-        sh.name = 'scheldue_'+name
-        sh.workplace = wp
-        sh.save()
-        print(sh.workplace.id)
-
         return HttpResponseRedirect(reverse('workplaceAdmin', args=[wp.id]))
     else:
         request.session['error'] = 'Что-то пошло не так'
@@ -488,7 +480,7 @@ def index(request):
             print(reverse('admin'))
             return HttpResponseRedirect(reverse('admin'))
         else:
-            return HttpResponseRedirect(reverse('user', args=[user.id]))
+            return HttpResponseRedirect(reverse('user', args=[request.user.id]))
     return render(request, 'PlaningSystem/index.html')
 
 def register_user(request):
@@ -558,55 +550,160 @@ def register_user(request):
     }
     return render(request, 'PlaningSystem/registration.html', context)
 
-def userSave(request):
+def userWishSave(request):
     get_params = request.GET
     for name in get_params:
         value = int(get_params[name])
         value = WishEnum.objects.get(id=value)
-        # print(value)
+        print(value)
         # print(name,value)
         if 'wish_id' in name:
             wish_id = int(name.replace('wish_id-', ''))
             # print(wish_id)
             userWish = UserWish.objects.get(id=wish_id)
             userWish.wish = value
-            userWish.save()
+            userWish.isApproved = False
+            if request.user.id == userWish.user.id:
+                userWish.save()
         elif 'shift_id' in name:
             shift_id = int(name.replace('shift_id-', ''))
             shift = WorkingShift.objects.get(id=shift_id)
             uw = UserWish(since=shift.since,to=shift.to,wish=value,isApproved=False,workingShift=shift,user=request.user)
             uw.save()
-            # print('shift:', wish_id)
+    return HttpResponseRedirect(reverse('user',args=[request.user.id]))
 
-    return HttpResponseRedirect("/PlaningSystem/user/{!s}".format(request.user.id))
+def changeUser(request, user_id):
+    user = request.user
+    if user.is_anonymous():
+        return HttpResponseNotFound('<h2>У вас нет прав для просмотра этой страницы, зарегестрируйтесь или войдите</h2>')
+    if not user.is_superuser and user.id != int(user_id):
+        return HttpResponseNotFound('<h2>Вы не можете редоктировать эту страницу</h2>')
+    if user.is_authenticated and user.id == int(user_id):
+        ch_user = User.objects.get(id=user_id)
+        context = {
+            'ch_user': ch_user
+        }
+        if 'error' in request.session:
+            context['error'] = request.session['error']
+            del request.session['error']
+        if 'error_pas' in request.session:
+            context['error_pas'] = request.session['error_pas']
+            del request.session['error_pas']
+        return render(request,'PlaningSystem/change_user.html', context)
+    if user.is_superuser:
+        return HttpResponseRedirect(reverse('admin:PlaningSystem_user_change',args=[user_id]))
+
+
+def saveChangeUser(request):
+    ch_user = request.user
+    username = None
+    password1 = None
+    password2 = None
+    email = None
+    first_name = None
+    second_name = None
+    third_name = None
+    mobile_phone = None
+    work_phone = None
+    avatar = None
+    if 'username' in request.POST:
+        username = request.POST['username']
+        if not username:
+            request.session['error'] = 'логин не может быть пустым'
+            return HttpResponseRedirect(reverse('changeUser', args=[ch_user.id]))
+        for us in User.objects.filter(username=username):
+            if us.id != ch_user.id:
+                request.session['error'] = 'логин уже занят'
+                return HttpResponseRedirect(reverse('changeUser', args=[ch_user.id]))
+
+    if 'password1' in request.POST:
+        password1 = request.POST['password1']
+        if not password1:
+            request.session['error_pas'] = 'пустой пароль, это как?'
+            return HttpResponseRedirect(reverse('changeUser', args=[ch_user.id]))
+    if 'password2' in request.POST:
+        password2 = request.POST['password2']
+        if not password2:
+            request.session['error_pas'] = 'а подтвердить?'
+            return HttpResponseRedirect(reverse('changeUser', args=[ch_user.id]))
+        if password1!=password2:
+            request.session['error_pas'] = 'пароли не совпадат'
+            return HttpResponseRedirect(reverse('changeUser', args=[ch_user.id]))
+        else:
+            ch_user.set_password(password1)
+    if 'email' in request.POST:
+        email = request.POST['email']
+    if 'first_name' in request.POST:
+        first_name = request.POST['first_name']
+    if 'second_name' in request.POST:
+        second_name = request.POST['second_name']
+    if 'third_name' in request.POST:
+        third_name = request.POST['third_name']
+    if 'mobile_phone' in request.POST:
+        mobile_phone = request.POST['mobile_phone']
+    if 'work_phone' in request.POST:
+        work_phone = request.POST['work_phone']
+
+    if 'avatar' in request.FILES:
+        avatar = request.FILES['avatar']
+        ch_user.avatar = avatar
+    if username != None and username.__len__()>0:
+        ch_user.username = username
+    if email != None and email.__len__()>0:
+        ch_user.email = email
+    if first_name != None and first_name.__len__()>0:
+        ch_user.first_name = first_name
+    if second_name != None and second_name.__len__()>0:
+        ch_user.last_name = second_name
+    if third_name != None and username.__len__()>0:
+        ch_user.third_name = third_name
+    if mobile_phone != None and username.__len__()>0:
+        ch_user.mobile_phone = mobile_phone
+    if work_phone != None and username.__len__()>0:
+        ch_user.work_phone = work_phone
+    ch_user.save()
+    return HttpResponseRedirect(reverse('changeUser', args=[request.user.id]))
 
 def user(request, user_id):
-    logined_user = request.user
+    user = request.user
+    if user.is_authenticated and user.id == int(user_id):
+        if user.is_superuser:
+            return HttpResponseRedirect(reverse('admin'))
+        return my_page(request, user_id)
+    else:
+        viewed_user = User.objects.get(id=user_id)
+        if not viewed_user in User.getValidUsers():
+            return HttpResponseNotFound('<h1>Пользватель не найден или отключен</h1>')
+        since = get_since(request,'user')
+        to = get_to(request,'user')
+        days = GetDaysOfPeriod(since, to)
+        ColomnNum = days.__len__() * QUANTUM.DAY + 1
+        months = list_month_dur(since, to)
+        wishes = viewed_user.getUserWishes(since, to)
+        workplaces = viewed_user.getWorkPlaces()
+        context = {
+            'since': since,
+            'to': to,
+            'user': User.objects.get(id=user_id),
+            'days': days,
+            'workplaces': workplaces,
+            'wishes': wishes,
+            'wishesEnum': WishEnum.objects.all(),
+            'ColomnNum': ColomnNum,
+            'months': months,
+            'QUANT_FOR_SCHELDUE': QUANTUM.DAY
+        }
+        return render(request, 'PlaningSystem/user.html', context)
+
+def my_page(request, user_id):
     viewed_user = User.objects.get(id=user_id)
-    today = datetime.date.today()
-    since = datetime.datetime(today.year, today.month, 1)
-    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-    # from_zone = tz.tzutc()
-    if request.GET.get('since'):
-        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
-        # tzinfo=None
-        # print(since.tzinfo)
-        # since.replace(tzinfo=locals())
-    if request.GET.get('to'):
-        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
-        # to.replace(tzinfo=from_zone)
-    to += datetime.timedelta(hours=23, minutes=59)
+    since = get_since(request,'user')
+    to = get_to(request,'user')
     days = GetDaysOfPeriod(since, to)
     ColomnNum = days.__len__() * QUANTUM.DAY + 1
     months = list_month_dur(since, to)
-    # wishes = viewed_user.getUserWishesforPeriod(since, to)
     wishes = viewed_user.getUserWishes(since, to)
     workplaces = viewed_user.getWorkPlaces()
-    # for workplace in workplaces:
-    #     workplaceitems = [workplace]
-    #     for day in days:
-    #         workplaceitems.append(viewed_user.getWishForDate(day, workplace))
-    #     wishes.append(workplaceitems)
     context = {
         'since': since,
         'to': to,
@@ -614,13 +711,12 @@ def user(request, user_id):
         'days': days,
         'workplaces': workplaces,
         'wishes': wishes,
-        # 'wishes': [],
         'wishesEnum': WishEnum.objects.all(),
         'ColomnNum': ColomnNum,
         'months': months,
         'QUANT_FOR_SCHELDUE': QUANTUM.DAY
     }
-    return render(request, 'PlaningSystem/user.html', context)
+    return render(request, 'PlaningSystem/my_page.html', context)
 
 def rate(request, rate_id):
     rate = Rate.objects.get(id=rate_id)
@@ -643,21 +739,13 @@ def workplace(request, workplace_id):
     scheldue = workplace.schedule
     rates = workplace.rates.all()
     viewing_user = request.user
-    # users = User.objects.filter(workplaces=workplace).exclude(id=viewing_user.id)
+    if viewing_user.is_anonymous():
+        return HttpResponseNotFound('<h2>У вас нет прав для просмотра этой страницы, зарегестрируйтесь или войдите</h2>')
+    if not viewing_user in User.getValidUsers():
+        return HttpResponseNotFound('<h2>У вас нет прав для просмотра этой страницы</h2>')
     users = User.getValidUsers([viewing_user])
-    today = datetime.date.today()
-    since = datetime.datetime(today.year, today.month, 1)
-    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
-    # from_zone = tz.tzutc()
-    if request.GET.get('since'):
-        since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
-        # tzinfo=None
-        # print(since.tzinfo)
-        # since.replace(tzinfo=locals())
-    if request.GET.get('to'):
-        to = datetime.datetime.strptime(request.GET['to'], '%Y-%m-%d')
-        # to.replace(tzinfo=from_zone)
-    to += datetime.timedelta(hours=23, minutes=59)
+    since = get_since(request,'u_wp')
+    to = get_to(request,'u_wp')
     days = GetDaysOfPeriod(since, to)
     ColomnNum = days.__len__() * QUANTUM.DAY + 1
     months = list_month_dur(since, to)
@@ -668,7 +756,6 @@ def workplace(request, workplace_id):
     for user in users:
         uw = user.getUserWishesForWp(workplace,since, to)
         users_wishes.append(uw)
-    print(users_wishes)
     context = {
         'workplace': workplace,
         'users': users,

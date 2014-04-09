@@ -7,7 +7,7 @@
 {#            <input type="submit" name="admin" value="Администрирование БД" class="ptserif"#}
 {#            onclick="document.location='{% url 'admin:index' %}'; return false;"/>#}
         {% else %}
-                <a href="{% url 'user' user.id %}">моя страница</a>
+                <a href="{% url 'user' request.user.id %}">моя страница</a>
         {% endif %}
     <form method="post" action="{% url 'auth:logout' %}?next={% url 'index' %}">
         {% csrf_token %}

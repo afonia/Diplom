@@ -10,25 +10,25 @@ admin.autodiscover()
 
 urlpatterns = patterns('',
     # Examples:
-    # url(r'^$', 'Diplom.views.home', name='home'),
-    # url(r'^blog/', include('blog.urls')),
+    url(r'^admin/', include(admin.site.urls)),
     url(r'^index/$', views.index, name='index'),
     url(r'^user/(?P<user_id>\d+)', views.user, name='user'),
-    url(r'^user/save', views.userSave, name='userSave'),
-    url(r'^sheldue/(?P<user_id>\d+)', views.userShedule, name='userSheldue'),
-    url(r'^sheldue/add', views.userSheduleAdd, name='userSheldueAdd'),
+    url(r'^user/change/(?P<user_id>\d+)', views.changeUser, name='changeUser'),
+    url(r'^user/change/save', views.saveChangeUser, name='SaveChangeUser'),
+    url(r'^user/saveWishes', views.userWishSave, name='userWishSave'),
     url(r'^workplace/(?P<workplace_id>\d+)', views.workplace, name='workplace'),
-    url(r'^rate/(?P<rate_id>\d+)', views.rate, name='rate'),
-    url(r'^admin/', include(admin.site.urls)),
-    url(r'^login/$', views.login, name='login'),
     url(r'^auth/', include('django.contrib.auth.urls', namespace='auth')),
-    url(r'^accounts/', include('registration.backends.default.urls')),
-    url(r'^accounts/login/$',  login),
-    url(r'^accounts/logout/$', logout),
     url(r'^register/$', views.register_user, name='register_user'),
+
+
+# url(r'^sheldue/(?P<user_id>\d+)', views.userShedule, name='userSheldue'),
+    # url(r'^sheldue/addShift', views.userSheduleAdd, name='userSheldueAdd'),
+    # url(r'^rate/(?P<rate_id>\d+)', views.rate, name='rate'),
+    # url(r'^login/$', views.login, name='login'),
+    # url(r'^accounts/', include('registration.backends.default.urls')),
+    # url(r'^accounts/login/$',  login),
+    # url(r'^accounts/logout/$', logout),
     url(r'^test/$', views.test, name='test'),
-
-
 # admins urls:
     url(r'^index/admin/$', views.admin, name='admin'),
     #workplaces

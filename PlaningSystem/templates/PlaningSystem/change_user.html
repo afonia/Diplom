@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Редактирование</title>
+</head>
+<body>
+{% include "PlaningSystem/head.html" %}
+{{ error }}<br>
+
+<form action="{% url 'SaveChangeUser' %}" method="post">{% csrf_token %}
+    Логин:
+    <input type="text" name="username" value="{{ ch_user.username }}"><br>
+    мыло:
+    <input type="email" name="email" value="{{ ch_user.email }}"><br>
+    имя:
+    <input type="text" name="first_name" value="{{ ch_user.first_name }}"><br>
+    фамилия:
+    <input type="text" name="second_name" value="{{ ch_user.last_name }}"><br>
+    отчество:
+    <input type="text" name="third_name" value="{{ ch_user.third_name }}"><br>
+    мобильный телефон:
+    <input type="text" name="mobile_phone" value="{{ ch_user.mobile_phone }}"><br>
+    рабочий телефон:
+    <input type="text" name="work_phone" value="{{ ch_user.work_phone }}"><br>
+    <input type="submit" value="Сохранить изменения">
+</form>
+{{error_pas}}
+<form action="{% url 'SaveChangeUser' %}" method="post">{% csrf_token %}
+    пароль:
+    <input type="password" name="password1"><br>
+    подтвердите:
+    <input type="password" name="password2"><br>
+    <input type="submit" value="сменить пароль">
+</form>
+
+<form action="{% url 'SaveChangeUser' %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+    аватар:<br>
+    <img src="{{ ch_user.avatar.url }}">
+    <input id="id_file" name="avatar" type="file"/>
+    <input type="submit" value="сменить аватар">
+</form>
+</body>
+</html>
