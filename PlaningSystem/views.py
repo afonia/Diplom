@@ -7,7 +7,7 @@ from datetime import datetime
 from  django.views.generic.dates import *
 # Create your views here.
 import sys
-from Diplom.settings import BASE_DIR, MEDIA_ROOT, MEDIA_URL
+from Diplom.settings import BASE_DIR, MEDIA_ROOT, MEDIA_URL, STATIC_ROOT
 from PlaningSystem.forms import UploadFileForm
 from PlaningSystem.models import *
 from dateutil import tz
@@ -474,6 +474,9 @@ def rateAdmin(request, rate_id):
 
 #/////////////////////////////////////////////end admin
 def index(request):
+    print(
+        STATIC_ROOT
+    )
     if request.user.is_authenticated():
         print(request.user.is_superuser)
         if request.user.is_superuser:
@@ -839,6 +842,7 @@ def list_month_dur(since, to):
 
 def login(request):
     #sys.stdout.write("asd\n")
+
     if request.method == 'POST':
         post = request.POST
         password = post.__getitem__('password')

@@ -1,7 +1,11 @@
+{% load staticfiles %}
 <!DOCTYPE html>
 <html>
 <head>
     <title>Админ</title>
+
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css"/>
 </head>
 <body>
 {% include "PlaningSystem/head.html" %}
@@ -10,11 +14,11 @@
 Пользователи:<br>
 {% if not_active_users %}
     <form action="{% url 'activeUserAdmin' %}" method="get" name="userWishSave" id="UserId">
-    Не активные пользователи:<br>
-    {% for user in  not_active_users %}
-        <input type="checkbox" name="not_active_user" value="{{ user.id }}" >{{ user.username }}<br>
-    {% endfor %}
-    <input type="submit" value="Активировать">
+        Не активные пользователи:<br>
+        {% for user in  not_active_users %}
+            <input type="checkbox" name="not_active_user" value="{{ user.id }}">{{ user.username }}<br>
+        {% endfor %}
+        <input type="submit" value="Активировать">
     </form>
     Активные:<br>
 {% endif %}
@@ -26,27 +30,27 @@
 
 <br>
 Все рабочие места:<br>
-    {% for workplace in all_workplaces %}
-        <li><a href="{% url 'workplaceAdmin' workplace.id %}"> {{ workplace.name }} </a></li>
-        {% empty %}
-        нет рабочих мест<br>
-    {% endfor %}
+{% for workplace in all_workplaces %}
+    <li><a href="{% url 'workplaceAdmin' workplace.id %}"> {{ workplace.name }} </a></li>
+{% empty %}
+    нет рабочих мест<br>
+{% endfor %}
 создать рабочее место
 <li>
-<form action="{% url 'workplaceAdminCreate' %}" method="get">
-    <input type="text" name="name_wp">
-    <input type="submit" value="создать">
-</form>
+    <form action="{% url 'workplaceAdminCreate' %}" method="get">
+        <input type="text" name="name_wp">
+        <input type="submit" value="создать">
+    </form>
 </li>
 <br>
 Все ставки:<br>
-    {% for rate in all_rates %}
-        <li><a href="{% url 'rateAdmin' rate.id %}">
-            {{ rate.name }}
-        </a></li>
-        {% empty %}
-        No rates<br>
-    {% endfor %}
+{% for rate in all_rates %}
+    <li><a href="{% url 'rateAdmin' rate.id %}">
+        {{ rate.name }}
+    </a></li>
+{% empty %}
+    No rates<br>
+{% endfor %}
 
 <br>
 

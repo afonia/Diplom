@@ -2,84 +2,88 @@
 <html>
 <head>
     <title>User</title>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css"/>
 </head>
 <body>{% include "PlaningSystem/head.html" %}
-login: {{ user.username}}<br>
-<img src=" {{ user.avatar.url }}"><br>
+login: {{ user.username }}<br>
+<img src=" {{ user.avatar.url }}" width="100" height="200"><br>
 Имя : {{ user.first_name }}<br>
 Фамилия: {{ user.last_name }}<br>
 Отчество: {{ user.third_name }}<br>
 <br>
 Показать за период:
 <form action="" method="get">
-С:  <input type="date" name="since"  value="{{ since|date:"Y-m-d" }}" id="since"/>
-По:     <input type="date" name="to" value="{{ to|date:"Y-m-d" }}" id="to"/><br>
-<input type="submit" VALUE="Показать" >
-<br>
+    С: <input type="date" name="since" value="{{ since|date:"Y-m-d" }}" id="since"/>
+    По: <input type="date" name="to" value="{{ to|date:"Y-m-d" }}" id="to"/><br>
+    <input type="submit" VALUE="Показать">
+    <br>
 </form>
 
 <form action="{% url 'userWishSave' %}" method="get" name="userWishSave" id="UserId">
-<table BORDER WIDTH="100%" >
-    <tr>
-        <th COLSPAN={{ ColomnNum }}>Рассписание</th>
-    </tr>
-    <tr>
-        <th ROWSPAN=2>Рабочее Место</th>
+    <table BORDER WIDTH="100%">
+        <tr>
+            <th COLSPAN={{ ColomnNum }}>Рассписание</th>
+        </tr>
+        <tr>
+            <th ROWSPAN=2>Рабочее Место</th>
 
-        {% for month,duration in months %}
-        <th colspan={{ duration }}>{{ month|date:'F, Y'}}</th>
-        {% empty %}
-        Период не задан или задан не верно<br>
-        {% endfor %}
-    </tr>
-    <tr>
-        {% for day in days %}
-        <th colspan={{ QUANT_FOR_SCHELDUE }}>{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
-        {% empty %}
-        Период не задан или задан не верно<br>
-        {% endfor %}
-   </tr>
-    {% for wish in wishes %}
-    <tr>
-        <th rowspan="2">
-           <li><a href="{% url 'workplace' wish.0.id %}">{{ wish.0.name }}</a></li>
-        </th>
-        {% for durSh in wish.1 %}
-            <td colspan="{{ durSh.0.duration }}">
-            {% if durSh.0.hasShift %}
-                начало:{{ durSh.1.since|date:'H:i' }} <br>
-                конец:{{ durSh.1.to|date:'H:i' }} <br>
-            {% else %}
-                нет смен
-            {% endif %}
-            </td>
-        {% empty %}
-        <td> нет данных для отображения</td>
-        {% endfor %}
-    </tr>
-    <tr>
-    {% for durSh in wish.1 %}
-            <td colspan="{{ durSh.0.duration }}">
-            {% if durSh.0.hasShift %}
-                {% if durSh.2 %}
-                    {{ durSh.2.0.wish.wish }}
-                {% else %}
-                    Нет пожелания
-                {% endif %} 
-            {% else %}
-                выбор не возможен
-            {% endif %}
-            </td>
-        {% empty %}
-        <td> нет данных для отображения</td>
-        {% endfor %}
-    </tr>
+            {% for month,duration in months %}
+                <th colspan={{ duration }}>{{ month|date:'F, Y' }}</th>
+            {% empty %}
+                Период не задан или задан не верно<br>
+            {% endfor %}
+        </tr>
+        <tr>
+            {% for day in days %}
+                <th colspan={{ QUANT_FOR_SCHELDUE }}>{{ day|date:'j' }}<br>{{ day|date:'l' }}</th>
+            {% empty %}
+                Период не задан или задан не верно<br>
+            {% endfor %}
+        </tr>
+        {% for wish in wishes %}
+            <tr>
+                <th rowspan="2">
+                    <li><a href="{% url 'workplace' wish.0.id %}">{{ wish.0.name }}</a></li>
+                </th>
+                {% for durSh in wish.1 %}
+                    <td colspan="{{ durSh.0.duration }}">
+                        {% if durSh.0.hasShift %}
+                            начало:{{ durSh.1.since|date:'H:i' }} <br>
+                            конец:{{ durSh.1.to|date:'H:i' }} <br>
+                        {% else %}
+                            нет смен
+                        {% endif %}
+                    </td>
+                {% empty %}
+                    <td> нет данных для отображения</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                {% for durSh in wish.1 %}
+                    <td colspan="{{ durSh.0.duration }}">
+                        {% if durSh.0.hasShift %}
+                            {% if durSh.2 %}
+                                {{ durSh.2.0.wish.wish }}
+                            {% else %}
+                                Нет пожелания
+                            {% endif %}
+                        {% else %}
+                            выбор не возможен
+                        {% endif %}
+                    </td>
+                {% empty %}
+                    <td> нет данных для отображения</td>
+                {% endfor %}
+            </tr>
 
-    {% empty %}
-        <tr><th>Нет рабочих мест</th></tr>
-    {% endfor %}
-</table>
-<input type="submit" VALUE="Сохранить" >
+        {% empty %}
+            <tr>
+                <th>Нет рабочих мест</th>
+            </tr>
+        {% endfor %}
+    </table>
+    <input type="submit" VALUE="Сохранить">
 </form>
 
 </body>
