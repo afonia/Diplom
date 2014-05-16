@@ -81,7 +81,20 @@
     Вставить после <input type="datetime-local" name="after-copy" value="" id="to"/><br>
     <input type="submit" value="Вставить">
 </form>
+<br>
+Автоматически сгенерировать смены:
+<form action="{% url 'scheldueGenerateShiftsAdmin' scheldue.id %}" method="get">
+    С:      <input type="date" name="since"  value="{{ since|date:"Y-m-d" }}" id="since"/>
+    По:     <input type="date" name="to" value="{{ to|date:"Y-m-d" }}" id="to"/><br>
+    <input type="checkbox" name="set-month">Заполнить весь месяц.
+    Выберете  месяц:<input type="month" name="month" />
+    <br>
+    Количество смен в сутки: <input type="radio" name="shifts_num" value="2" checked> 2 смены(12ч.)
+                             <input type="radio" name="shifts_num" value="3"> 3 смены(8ч.)<br>
+    Вставить после <input type="time" name="after" value="08:00"/><br>
 
+    <input type="submit" value="Добавить">
+</form>
 
 </body>
 </html>

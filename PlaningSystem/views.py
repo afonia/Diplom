@@ -299,6 +299,56 @@ def scheldueCopyShiftsAdmin(request, scheldue_id):
 
     return HttpResponseRedirect("/PlaningSystem/scheldue/admin/{!s}".format(scheldue_id))
 
+def scheldueGenerateShiftsAdmin(request, scheldue_id):
+    checkAdmin(request)
+    scheldue = Schedule.objects.get(id=scheldue_id)
+    get_params = request.GET
+    if 'after' in get_params and get_params['after']:
+        after = datetime.datetime.strptime(get_params['after'], '%H:%M')
+        after = datetime.timedelta(hours=after.hour, minutes=after.minute)
+        print(after)
+    else:
+        request.session['scheldue_admin_error'] = "Укажите время начала смен"
+        return HttpResponseRedirect(reverse('scheldueAdmin', args=[scheldue_id]))
+
+    if 'shifts_num' in get_params and get_params['shifts_num']:
+        shifts_num = int(get_params['shifts_num'])
+        hours = int(24/shifts_num)
+        hours = datetime.timedelta(hours=hours)
+        print(hours)
+    else:
+        request.session['scheldue_admin_error'] = "Укажите количсвто смен в сутки"
+        return HttpResponseRedirect(reverse('scheldueAdmin' ,args=[scheldue_id]))
+    if 'set-month' in get_params:
+        if 'month' in get_params and get_params['month']:
+            month = get_params['month']
+            month = datetime.datetime.strptime(month, '%Y-%m')
+            since = datetime.datetime(month.year, month.month, 1)
+            to = datetime.datetime(month.year, month.month, calendar.monthrange(month.year, month.month)[1])
+            new_shifts = scheldue.generate_shifts(since, to, after, hours)
+        else:
+            request.session['scheldue_admin_error'] = "Месяц не задан"
+            return HttpResponseRedirect(reverse('scheldueAdmin',args=[scheldue_id]))
+    else:
+        if 'since' in get_params and get_params['since']:
+            since = datetime.datetime.strptime(get_params['since'], '%Y-%m-%d')
+        else:
+            request.session['scheldue_admin_error'] = "Не заданно время"
+            return HttpResponseRedirect(reverse('scheldueAdmin',args=[scheldue_id]))
+        if 'to' in get_params and get_params['to']:
+            to = datetime.datetime.strptime(get_params['to'], '%Y-%m-%d')
+        else:
+            request.session['scheldue_admin_error'] = "Не заданно время"
+            return HttpResponseRedirect(reverse('scheldueAdmin',args=[scheldue_id]))
+        new_shifts = scheldue.generate_shifts(since, to, after, hours)
+    if scheldue.isValidShifts(new_shifts):
+        for shifts in new_shifts:
+            shifts.save()
+    else:
+        request.session['scheldue_admin_error'] = "Новые смены пересикаются со старыми"
+        return HttpResponseRedirect(reverse('scheldueAdmin',args=[scheldue_id]))
+    return HttpResponseRedirect(reverse('scheldueAdmin',args=[scheldue_id]))
+
 def scheldueAdmin(request, scheldue_id):
     checkAdmin(request)
     scheldue = Schedule.objects.get(id=scheldue_id)

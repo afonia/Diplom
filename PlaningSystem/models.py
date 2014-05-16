@@ -189,6 +189,18 @@ class Schedule(models.Model):
 
         return True
 
+    def generate_shifts(self, startDate, endDate, startTime, hours_in_shift):
+        shifts_list = []
+        current_date = startDate + startTime
+        endDate = endDate + datetime.timedelta(days=1)
+        while(current_date+hours_in_shift<=endDate):
+            shift = WorkingShift(since=current_date, to=(current_date + hours_in_shift), scheldue=self)
+            current_date = current_date+hours_in_shift
+            print(shift.since, shift.to)
+            shifts_list.append(shift)
+        return shifts_list
+
+
     def pasteShiftAfter(self, shifts, after):
         # shifts = self.getShiftsForPeriod(after,after)
         new_shifts = []

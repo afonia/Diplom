@@ -40,6 +40,7 @@ urlpatterns = patterns('',
     url(r'^scheldue/copy/admin/(?P<scheldue_id>\d+)', views.scheldueCopyShiftsAdmin, name='scheldueCopyShiftsAdmin'),
     #scheldues
     url(r'^scheldue/admin/(?P<scheldue_id>\d+)', views.scheldueAdmin, name='scheldueAdmin'),
+    url(r'^scheldue/generate/admin/(?P<scheldue_id>\d+)', views.scheldueGenerateShiftsAdmin, name='scheldueGenerateShiftsAdmin'),
     url(r'^scheldue/change/admin/(?P<scheldue_id>\d+)', views.scheldueChangeShiftAdmin, name='scheldueChangeShiftAdmin'),
     url(r'^scheldue/new/admin/(?P<scheldue_id>\d+)', views.scheldueNewShiftAdmin, name='scheldueNewShiftAdmin'),
     url(r'^scheldue/delete/admin/(?P<scheldue_id>\d+)', views.scheldueDeleteShiftAdmin, name='scheldueDeleteShiftAdmin'),
