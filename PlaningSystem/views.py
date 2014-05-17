@@ -251,27 +251,16 @@ def scheldueDeleteShiftAdmin(request, scheldue_id):
     checkAdmin(request)
     get_params = request.GET
     scheldue = Schedule.objects.get(id=scheldue_id)
-    since = None
-    to = None
     for name in get_params:
-        value = get_params[name]
-        if 'T' in value:
-            if value.__len__()< 17:#КОСТЫЛЬ!!
-                value = value + ':00'
-            value = datetime.datetime.strptime(value,'%Y-%m-%dT%H:%M:%S')
-            if 'since' in name:
-                since = value
-            elif 'to' in name:
-                to = value
-            if since!=None and to!=None:
-                shifts = scheldue.getShiftsForPeriod(since, to)
-                if shifts.__len__()>0 and shifts[0].since==since and shifts[0].to==to:
-                    shifts[0].deleteWithUserWishes()
-                    request.session['scheldue_admin_error'] = "Удалено!"
-                else:
-                    request.session['scheldue_admin_error'] = "Не получилось!"
-
-    return HttpResponseRedirect("/PlaningSystem/scheldue/admin/{!s}".format(scheldue_id))
+        if 'check_shift_id' in name:
+            id = int(name.replace('check_shift_id-', ''))
+            shift = WorkingShift.objects.get(id=id)
+            shift.delete()
+            if 'scheldue_admin_error' not in request.session:
+                request.session['scheldue_admin_error'] = "Смены удалены"
+    if 'scheldue_admin_error' not in request.session:
+        request.session['scheldue_admin_error'] = "Нечего удалять"
+    return HttpResponseRedirect(reverse('scheldueAdmin', args=[scheldue_id]))
 
 def scheldueCopyShiftsAdmin(request, scheldue_id):
     checkAdmin(request)

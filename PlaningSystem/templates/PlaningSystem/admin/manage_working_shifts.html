@@ -23,6 +23,7 @@
 
 <br>
 {{ error }}
+<form action="{% url 'scheldueDeleteShiftAdmin' scheldue.id %}" method="get">
 <table BORDER WIDTH="100%" >
     <tr>
         <th COLSPAN={{ ColomnNum }}>Рассписание</th>
@@ -50,11 +51,11 @@
                     По:     <input type="datetime-local" name="to-shift_id-{{ durSh.1.id }}" value="{{ durSh.1.to|date:"c" }}" id="to"/><br>
                 <input type="submit" value="Сохранить">
                 </form>
-                <form action="{% url 'scheldueDeleteShiftAdmin' scheldue.id %}" method="get">
-                           <input type="hidden" name="since-shift_id-{{ durSh.1.id }}"  value="{{ durSh.1.since|date:"c" }}" id="since"/>
-                           <input type="hidden" name="to-shift_id-{{ durSh.1.id }}" value="{{ durSh.1.to|date:"c" }}" id="to"/><br>
-                <input type="submit" value="Удалить">
-                </form>
+
+{#                           <input type="hidden" name="since-shift_id-{{ durSh.1.id }}"  value="{{ durSh.1.since|date:"c" }}" id="since"/>#}
+{#                           <input type="hidden" name="to-shift_id-{{ durSh.1.id }}" value="{{ durSh.1.to|date:"c" }}" id="to"/><br>#}
+                <input type="checkbox" name="check_shift_id-{{ durSh.1.id }}">
+
             {% else %}
                 Пусто
             {% endif %}
@@ -64,7 +65,8 @@
         {% endfor %}
     </tr>
 </table>
-
+<input type="submit" value="Удалить выбранные">
+</form>
 
 <br>Добавить смену:
 <form action="{% url 'scheldueNewShiftAdmin' scheldue.id %}" method="get">
