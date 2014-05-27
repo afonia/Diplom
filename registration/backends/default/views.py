@@ -72,6 +72,8 @@ class RegistrationView(BaseRegistrationView):
 
         """
         username, email, password = cleaned_data['username'], cleaned_data['email'], cleaned_data['password1']
+        # password = password.encode('utf-8')
+        # username = username.encode('utf-8')
         if Site._meta.installed:
             site = Site.objects.get_current()
         else:

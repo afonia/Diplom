@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Уведомления</title>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/base.css"/>
+    <link rel="stylesheet" type="text/css" href="/static/admin/css/dashboard.css"/>
+</head>
+<body>
+<body>{% include "PlaningSystem/head.html" %}
+новые:
+{% for notice in  new_notices %}
+    {{ notice.text }}<br>
+{% endfor %}<br>
+Старые:
+{% for notice in  old_notices %}
+    {{ notice.text }}<br>
+{% endfor %}<br>
+
+</body>
+</html>

@@ -1,5 +1,7 @@
 import calendar
 import os
+from django.core import signing
+from django.core.signing import Signer
 from django.core.urlresolvers import reverse
 from django.http import HttpResponse, HttpResponseRedirect, HttpResponseNotFound
 from django.shortcuts import render
@@ -21,6 +23,150 @@ def checkAdmin(request):
         return render(request, 'PlaningSystem/admin/errors.html', context)
     return None
 
+def autoSchelduleFill(request, workplace_id):
+    t_start = datetime.datetime.now()
+    since = get_since(request, 'awp')
+    to = get_to(request, 'awp')
+    workplace = Workplace.objects.get(id=workplace_id)
+    shifts = workplace.schedule.getShiftsForPeriod(since, to)
+    free_shifts = []
+    for shift in shifts:
+        if not shift.has_workers():
+            free_shifts.append(shift)
+    shifts = free_shifts
+    users = workplace.getUsers()
+    normal_weight = WishEnum.get_normal_weight()
+    userShiftWeight = {}#user:shiftWeight
+    shiftMaxWeight = {}#shift:[maxWeight,[users]]
+    for user in users:
+        shiftWeight = {} #shift:weight, shiftsNum: N , weightSum: S
+        shiftWeight['shiftsNum'] = user.getShiftsNumForPeriod(since, to, workplace.schedule)
+        shiftWeight['weightSum'] = 0
+        shiftWeight['planing_shifts'] = []
+        # print(user, user.getShiftsNumForPeriod(since, to, workplace.schedule))
+        for shift in shifts:
+            if shift.is_night() and not user.usersettings.nightShift:
+                shiftWeight[shift] = None
+                continue
+            if shift in shiftMaxWeight:
+                maxWeight = shiftMaxWeight[shift][0]
+            else:
+                maxWeight = None
+                shiftMaxWeight[shift] = [maxWeight, []]
+            # if shift.has_workers():
+            #     shiftWeight[shift] = None
+            # else:
+            wishes = user.getWishForShift(shift)
+            weight = 0
+            if wishes.__len__() > 0:
+                for wish in wishes:
+                    if wish.wish != None:
+                        weight += wish.wish.weight
+                    else:
+                        weight = normal_weight
+            else:
+                weight = normal_weight
+            shiftWeight[shift] = weight
+            shiftWeight['weightSum'] = shiftWeight['weightSum'] + weight
+            if maxWeight == None:
+                shiftMaxWeight[shift] = [weight, [user]]
+            if maxWeight != None and maxWeight <= weight:
+                if maxWeight == weight:
+                    old_users = shiftMaxWeight[shift][1]
+                    old_users.append(user)
+                    shiftMaxWeight[shift] = [weight, old_users]
+                else:
+                    shiftMaxWeight[shift] = [weight, [user]]
+
+        userShiftWeight[user] = shiftWeight
+        # print(user, shiftWeight)
+    # print(userShiftWeight)
+    # print(shiftMaxWeight)
+    planing_shifs = {}
+    for shift in shifts:
+        planing_shifs[shift] = None
+        t_users = []
+        if shiftMaxWeight[shift].__len__() > 1:
+            t_users = shiftMaxWeight[shift][1]
+        weight = shiftMaxWeight[shift][0]
+        users_change = {}
+        max_change = 0
+        user_best_change = None
+        print()
+        print(shift.since.day,':',shift.since.hour, '-',shift.to.hour,',', shift.is_night(),sep='')
+        for user in users:
+            shiftWeight_for_user = userShiftWeight[user]
+            k = user.could_work_at_shift(shift, shiftWeight_for_user['planing_shifts'])
+            # print(shift.since, shift.is_night(), user, k)
+            n = shiftWeight_for_user['shiftsNum']
+            m = shiftWeight_for_user['weightSum']
+            user_change = k*(n*normal_weight*2 + m)
+            users_change[user] = user_change
+            print(user,' ,can:', k,' ,Num:', n,' ,sum:', m,' ,change:', user_change,sep='')
+            if user_change > max_change:
+                max_change = user_change
+                user_best_change = user
+        print('postavle-', user_best_change)
+        if user_best_change != None:
+            # print(shift.since, user_best_change, users_change[user_best_change])
+            shiftWeight_for_user = userShiftWeight[user_best_change]
+            shiftWeight_for_user['shiftsNum'] -= 1
+            shiftWeight_for_user['weightSum'] -= shiftWeight_for_user[shift]
+            planing_shifs[shift] = user_best_change
+            t_shifts = shiftWeight_for_user['planing_shifts']
+            t_shifts.append(shift)
+            shiftWeight_for_user['planing_shifts'] = t_shifts
+            # print(user_best_change)
+            # for sh in userShiftWeight[user_best_change]['planing_shifts']:
+            #     print(sh.since)
+            userShiftWeight[user_best_change] = shiftWeight_for_user
+        # else:
+        #     for user in users:
+        #         user_best_change = None
+        #         if user not in users_change:
+        #             shiftWeight_for_user = userShiftWeight[user]
+        #             k = user.could_work_at_shift(shift, shiftWeight_for_user['planing_shifts'])
+        #             n = shiftWeight_for_user['shiftsNum']
+        #             m = shiftWeight_for_user['weightSum']
+        #             user_change = k*(n*normal_weight + m)
+        #             users_change[user] = user_change
+        #             if user_change > max_change:
+        #                 max_change = user_change
+        #                 user_best_change = user
+        #     if user_best_change != None:
+        #         planing_shifs[shift] = user_best_change
+        #         t_shifts = shiftWeight_for_user['planing_shifts']
+        #         t_shifts.append(shift)
+        #         shiftWeight_for_user['planing_shifts'] = t_shifts
+        #         userShiftWeight[user] = shiftWeight_for_user
+
+
+    print(datetime.datetime.now() - t_start)
+    for shift in shifts:
+        user = planing_shifs[shift]
+        if user!=None:
+            wishes = user.getWishForShift(shift)
+            if wishes.__len__()>0:
+                for wish in wishes:
+                    wish.isApproved = True
+                    wish.save()
+            else:
+                wish = UserWish(since=shift.since, to=shift.to,isApproved=True,workingShift=shift, user=user)
+                wish.save()
+    # request.session['planing_shifts'] = planing_shifs
+    return HttpResponseRedirect(reverse('workplaceAdmin', args=workplace_id))
+
+def deletePlaningShifts(request, workplace_id):
+    if 'planing_shifts' in request.session:
+        planing_shifs = request.session['planing_shifts']
+        for shift, user in planing_shifs:
+            wishes = user.getWishForShift(shift)
+            if wishes.__len__()>0:
+                for wish in wishes:
+                    wish.isApproved = False
+                    wish.save()
+        del request.session['planing_shifts']
+    return HttpResponseRedirect(reverse('workplaceAdmin', args=workplace_id))
 
 def activeUserAdmin(request):
     get_params = request.GET
@@ -31,11 +177,13 @@ def activeUserAdmin(request):
             user = User.objects.get(id=value)
             user.is_active = True
             user.save()
+            Notification.UserSetActive(user)
         elif 'disactive_user' in name:
             value = int(value)
             user = User.objects.get(id=value)
             user.is_active = False
             user.save()
+
     return HttpResponseRedirect(reverse('admin'))
 
 def admin(request):
@@ -71,8 +219,9 @@ def workpalceAdminCreate(request):
     return HttpResponseRedirect(reverse('admin'))
 
 def workpalceAdmin(request, workplace_id):
-    users = User.getValidUsers()
+    # users = User.getValidUsers()
     workplace = Workplace.objects.get(id=workplace_id)
+    users = workplace.user_set.filter(is_active=True)
     scheldue = workplace.schedule
     rates = workplace.rates.all()
     since = get_since(request, 'wp')
@@ -83,7 +232,7 @@ def workpalceAdmin(request, workplace_id):
     shifts = scheldue.getShiftsForPeriod(since, to)
     shiftsDur = ShiftDuration.addDuratins(shifts, since, to)
     users_wishes = []
-    print(users)
+    # print(users)
     for user in users:
         uw = user.getUserWishesForWp(workplace, since, to)
         users_wishes.append(uw)
@@ -102,6 +251,9 @@ def workpalceAdmin(request, workplace_id):
         'months': months,
         'QUANT_FOR_SCHELDUE': QUANTUM.DAY
     }
+
+    if 'planing_shifts' in request.session:
+        context['has_delete'] = True
 
     return render(request, 'PlaningSystem/admin/workplace_admin.html', context)
 
@@ -175,18 +327,23 @@ def workplaceChangeShiftAdmin(request, workplace_id):
             wish_id = int(name.replace('user_wish-', ''))
             userWish = UserWish.objects.get(id=wish_id)
             if 'off' in value:
-                userWish.isApproved=False
+                if userWish.isApproved:
+                    userWish.isApproved=False
+                    Notification.ShiftDenied(userWish.user, userWish)
             else:
-               userWish.isApproved=True
+                if not userWish.isApproved:
+                    userWish.isApproved=True
+                    Notification.ShiftActived(userWish.user, userWish)
             userWish.save()
         elif 'shift-' in name:
-            shift_id = int(name.replace('shift-', ''))
+            shift_id = int(name.replace('shift-', '').split('-')[0])
             if not 'off' in value:
                 shift = WorkingShift.objects.get(id=shift_id)
                 user_id = int(value)
                 user = User.objects.get(id=user_id)
-                wish = UserWish(since=shift.since, to=shift.to, isApproved=True, wish=WishEnum.objects.get(id=1), workingShift=shift, user=user)
+                wish = UserWish(since=shift.since, to=shift.to, isApproved=True, workingShift=shift, user=user)
                 wish.save()
+                Notification.ShiftActived(user, shift)
     return HttpResponseRedirect(url)
 
 def scheldueChangeShiftAdmin(request, scheldue_id):
@@ -525,6 +682,63 @@ def index(request):
             return HttpResponseRedirect(reverse('user', args=[request.user.id]))
     return render(request, 'PlaningSystem/index.html')
 
+def password_reset(request):
+    users = []
+    if 'email' in request.POST and request.POST['email']:
+        users = User.objects.filter(email=request.POST['email'])
+        if users.__len__()<1:
+            return render(request, 'PlaningSystem/password_reset.html', {'error': "По указанному email, ничего не найдено"})
+    elif 'username' in request.POST and request.POST['username']:
+        users = User.objects.filter(username=request.POST['username'])
+        if users.__len__()<1:
+            return render(request, 'PlaningSystem/password_reset.html', {'error': "По указанному логину, ничего не найдено"})
+    for user in users:
+        signer = Signer(salt='extra')
+        key = signer.sign(user.id)
+        text = 'Здрасвуйте, ' + user.getFIO() + ', для востановления пароля перейдите по ссылке:\n'
+        text += 'http://' + request.META['HTTP_HOST']+reverse('password_reset_confirm') + '?key=' + key
+        text += '\n\n Это письмо сгенерировано автоматически на него не нужно отвечать'
+        send_mail('Востановление пароля', text, EMAIL_HOST_USER, [user.email])
+        context = {
+            'messege': 'Вам было высланно письмо',
+        }
+        return render(request, 'PlaningSystem/password_reset.html', context)
+    return render(request, 'PlaningSystem/password_reset.html')
+
+def password_reset_confirm(request):
+    if 'key' in request.GET:
+        key = request.GET['key']
+        try:
+            signer = Signer(salt='extra')
+            user_id = signer.unsign(key)
+        except signing.BadSignature:
+            return render(request, 'PlaningSystem/password_reset_confirm.html', {'error': "Неверный URL"})
+        user = User.objects.filter(id=user_id)
+        if user.count() == 1:
+            user = user[0]
+        else:
+            return render(request, 'PlaningSystem/password_reset_confirm.html', {'error': "Пользователь не найден"})
+    else:
+        return render(request, 'PlaningSystem/password_reset_confirm.html', {'error': "Неверный URL"})
+
+    pass1 = None
+    pass2 = None
+    context = {
+        'pass_user': user
+    }
+    if 'password1' in request.POST and request.POST['password1']:
+        pass1 = request.POST['password1']
+    if 'password2' in request.POST and request.POST['password2']:
+        pass2 = request.POST['password2']
+    if pass1 == pass2 is not None:
+        user.set_password(pass1)
+        context['message'] = 'Пароль изменен'
+        user.save()
+    if pass1 != pass2:
+        context['message'] = 'Пароли не совпадают'
+
+    return render(request, 'PlaningSystem/password_reset_confirm.html', context)
+
 def register_user(request):
     error = ''
     username = None
@@ -587,6 +801,10 @@ def register_user(request):
         new_user.avatar = avatar
     if new_user is not None:
         new_user.save()
+        settings = UserSettings()
+        settings.user = new_user
+        settings.save()
+        Notification.NewUserRegistered(new_user)
         return HttpResponseRedirect(reverse('user', args=[new_user.id]))
     context = {
     }
@@ -635,6 +853,34 @@ def changeUser(request, user_id):
     if user.is_superuser:
         return HttpResponseRedirect(reverse('admin:PlaningSystem_user_change',args=[user_id]))
 
+
+def notificationsUser(request):
+    user = request.user
+    if user.is_authenticated:
+        notices = (Notification.objects.filter(user=user)).order_by('-pub_date')
+    else:
+        return HttpResponseRedirect(reverse('index'))
+
+    new_notices = []
+    old_notices = []
+    counter = 0
+    for note in notices:
+        if counter>100:
+            break
+        else:
+            if note.page == True:
+                old_notices.append(note)
+            elif note.page == False:
+                new_notices.append(note)
+                note.page = True
+                note.save()
+            counter+=1
+    context = {
+        'notices': notices,
+        'old_notices': old_notices,
+        'new_notices': new_notices,
+    }
+    return render(request, 'PlaningSystem/notifications.html', context)
 
 def saveChangeUser(request):
     ch_user = request.user
@@ -908,7 +1154,6 @@ def add_months(sourcedate, months):
 def get_since(request,key):
     today = datetime.date.today()
     since = datetime.datetime(today.year, today.month, 1)
-    to = datetime.datetime(today.year, today.month, calendar.monthrange(today.year, today.month)[1])
     if 'since' in request.GET:
         since = datetime.datetime.strptime(request.GET['since'], '%Y-%m-%d')
     elif 'since_'+key in request.session:

@@ -62,17 +62,21 @@ name: {{ workplace.name }}<br>
                   {% for durSh in user_wishes %}
                     <td colspan="{{ durSh.0.duration }}">
                     {% if durSh.0.hasShift %}
-                        {% if durSh.2.0.wish.wish %}
-                            {{durSh.2.0.wish.wish}}<br>
+                        {% if durSh.2.0 %}
+                            {% if durSh.2.0.wish.wish%}
+                                {{ durSh.2.0.wish.wish }}
+                                {% else %}
+                                Нет пожеланий
+                                {% endif %}<br>
                         <input type="hidden" name="user_wish-{{durSh.2.0.id}}" value="off">
                         <input type="checkbox" name="user_wish-{{durSh.2.0.id}}" value="{{user.id}}"
                                 {% if durSh.2.0.isApproved %}
                                 checked
-                                {% endif %} >подтвердить<br>
+                                {% endif %} >поставить<br>
                         {% else %}
                             нет пожелания<br>
-                        <input type="hidden" name="shift-{{ durSh.1.id }}" value="off">
-                        <input type="checkbox" name="shift-{{ durSh.1.id }}" value="{{ user.id }}" >поставить<br>
+                        <input type="hidden" name="shift-{{ durSh.1.id }}-{{ user.id }}" value="off">
+                        <input type="checkbox" name="shift-{{ durSh.1.id }}-{{ user.id }}" value="{{ user.id }}" >поставить<br>
                         {% endif %}
 
                     {% else %}
@@ -90,6 +94,16 @@ name: {{ workplace.name }}<br>
       {% endfor %}
 </table>
 <input type="submit" VALUE="Сохранить" >
+</form>
+<form action="{% url 'autoSchelduleFill' workplace.id %}" method="get">
+С:  <input type="date" name="since"  value="{{ since|date:"Y-m-d" }}" id="since"/>
+По:     <input type="date" name="to" value="{{ to|date:"Y-m-d" }}" id="to"/><br>
+<input type="submit" value="Назначить смены автоматически">
+    {% if has_delete %}
+        <form action="{% url 'deletePlaningShifts' workplace.id %}" method="get">
+            <input type="submit" value="Удалить смены">
+        </form>
+    {% endif %}
 </form>
 <br>
 <li><a href="{% url 'scheldueAdmin' scheldue.id %}">редактировать расписание </a></li>

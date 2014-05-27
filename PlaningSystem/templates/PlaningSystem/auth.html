@@ -1,18 +1,18 @@
-{% load i18n %}
-<div id="login-wrap">
-    {% if user.is_authenticated %}
-    <form method="post" action="{% url auth:logout %}?next={{ request.path|urlencode }}">
-        {% csrf_token %}
-        <input type="submit" name="logout" value="{% trans "Logout" %}" class="ptserif"/>
-        <input type="submit" name="admin" value="{% trans "Site Setup" %}" class="ptserif"
-            onclick="document.location='{% url admin:index %}'; return false;"/>
-    </form>
-    {% else %}
-    <form method="post" action="{% url auth:login %}?next={{ request.path|urlencode }}">
-        {% csrf_token %}
-        <input type="text" name="username" maxlength="30" id="id_username" class="ptserif"/>
-        <input type="password" name="password" id="id_password" class="ptserif"/>
-        <input type="submit" name="login" value="{% trans "Login" %}" class="ptserif"/>
-    </form>
-    {% endif %}
-</div>
+{#{% load i18n %}#}
+{#<div id="login-wrap">#}
+{#    {% if user.is_authenticated %}#}
+{#    <form method="post" action="{% url auth:logout %}?next={{ request.path|urlencode }}">#}
+{#        {% csrf_token %}#}
+{#        <input type="submit" name="logout" value="{% trans "Logout" %}" class="ptserif"/>#}
+{#        <input type="submit" name="admin" value="{% trans "Site Setup" %}" class="ptserif"#}
+{#            onclick="document.location='{% url admin:index %}'; return false;"/>#}
+{#    </form>#}
+{#    {% else %}#}
+{#    <form method="post" action="{% url auth:login %}?next={{ request.path|urlencode }}">#}
+{#        {% csrf_token %}#}
+{#        <input type="text" name="username" maxlength="30" id="id_username" class="ptserif"/>#}
+{#        <input type="password" name="password" id="id_password" class="ptserif"/>#}
+{#        <input type="submit" name="login" value="{% trans "Login" %}" class="ptserif"/>#}
+{#    </form>#}
+{#    {% endif %}#}
+{#</div>#}

@@ -6,6 +6,8 @@ from django.utils.translation import ugettext_lazy as _
 # Register your models here.
 from PlaningSystem.models import *
 
+class UserSettingsInline(admin.StackedInline):
+    model = UserSettings
 class UserAdmin(BaseUserAdmin):
     form = AdminUserChangeForm
     add_form = AdminUserAddForm
@@ -19,6 +21,7 @@ class UserAdmin(BaseUserAdmin):
             'work_phone',
             'mobile_phone',
             'avatar',
+            # 'settings',
             'workplaces'
         )}),
         (_('Permissions'), {'fields': ('is_active', 'is_staff', 'is_superuser',
@@ -31,11 +34,15 @@ class UserAdmin(BaseUserAdmin):
             'fields': ('username', 'email', 'password1', 'password2')}
         ),
     )
+    inlines = (UserSettingsInline,)
 
 admin.site.register(User, UserAdmin)
 
 class RateAdmin(admin.ModelAdmin):
     list_display = ('name',)
+
+class NotificationAdmin(admin.ModelAdmin):
+    list_display = ('pub_date', 'text',)
 
 class TimeCostAdmin(admin.ModelAdmin):
     list_display = ('rate',)
@@ -58,7 +65,13 @@ class WorkingShiftAdmin(admin.ModelAdmin):
 class UserWishAdmin(admin.ModelAdmin):
     list_display = ('user',)
 
+class UserSettingsAdmin(admin.ModelAdmin):
+    list_display = ('user',)
+
+
+
 admin.site.register(Rate, RateAdmin)
+admin.site.register(UserSettings, UserSettingsAdmin)
 admin.site.register(TimeCost, TimeCostAdmin)
 admin.site.register(WishEnum, WishEnumAdmin)
 admin.site.register(Workplace, WorkplaceAdmin)
@@ -66,4 +79,6 @@ admin.site.register(WorkingShift, WorkingShiftAdmin)
 # admin.site.register(User, UserAdmin)
 admin.site.register(UserWish, UserWishAdmin)
 admin.site.register(Schedule, ScheduleAdmin)
+admin.site.register(Notification, NotificationAdmin)
+
 

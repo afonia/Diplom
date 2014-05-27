@@ -34,6 +34,12 @@ STATICFILES_FINDERS = (
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.6/howto/deployment/checklist/
 
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'afonderkin@gmail.com'
+EMAIL_HOST_PASSWORD = 'rtyujhgf'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'k-pud+@r4be9e(-tv48(%by4)+s^zfaky774ual6jrtfrlw(k+'
 
@@ -64,8 +70,7 @@ INSTALLED_APPS = (
 )
 
 ACCOUNT_ACTIVATION_DAYS = 2
-
-# AUTH_USER_EMAIL_UNIQUE = True
+AUTH_USER_EMAIL_UNIQUE = True
 # EMAIL_HOST = 'localhost'
 # EMAIL_PORT = 1025
 # EMAIL_HOST_USER = ''
