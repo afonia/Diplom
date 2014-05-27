@@ -1,3 +1,6 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
 import calendar
 import datetime
 from django.contrib.auth.models import AbstractUser, UserManager

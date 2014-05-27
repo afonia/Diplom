@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
 from .forms import AdminUserChangeForm, AdminUserAddForm
 from .models import User
 from django.contrib import admin
